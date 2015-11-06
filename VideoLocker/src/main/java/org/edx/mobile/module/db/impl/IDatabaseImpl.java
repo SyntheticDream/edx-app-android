@@ -213,7 +213,6 @@ public class IDatabaseImpl extends IDatabaseBaseImpl implements IDatabase {
         return enqueue(op);
     }
 
-
     @Override
     public Boolean isVideoDownloadedInSection(String enrollmentId,
                                               String chapter, String section, final DataCallback<Boolean> callback) {
@@ -223,6 +222,21 @@ public class IDatabaseImpl extends IDatabaseBaseImpl implements IDatabase {
                 + DbStructure.Column.DOWNLOADED + "=? AND " + DbStructure.Column.USERNAME + "=?",
             new String[] { section, chapter, enrollmentId,
                 String.valueOf(DownloadedState.DOWNLOADED.ordinal()),username()}, null);
+        op.setCallback(callback);
+        return enqueue(op);
+    }
+
+    @Override
+    public List<Long> getDownloadedVideoDmIdsForSection(String enrollmentId, String chapter,
+                                                        String section , final DataCallback<List<Long>> callback ) {
+        DbOperationGetColumn<Long> op = new DbOperationGetColumn<Long>(true,DbStructure.Table.DOWNLOADS,
+                new String[]{DbStructure.Column.DM_ID},
+                DbStructure.Column.DOWNLOADED + "=? AND "+ DbStructure.Column.EID + "=? AND "
+                        + DbStructure.Column.CHAPTER + "=? AND "
+                        + DbStructure.Column.SECTION + "=? AND "
+                        + DbStructure.Column.USERNAME + "=?",
+                new String[] {String.valueOf(DownloadedState.DOWNLOADED.ordinal()),
+                        enrollmentId, chapter, section, username()}, null, Long.class);
         op.setCallback(callback);
         return enqueue(op);
     }

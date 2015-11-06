@@ -364,12 +364,12 @@ public class CourseOutlineAdapter extends BaseAdapter{
             holder.noOfVideos.setText("" + totalDownloadableVideos);
 
             List<Long> downloadingList = dbStore.getDownloadingVideoDmIdsForSection(courseId, chapterId, sequentialId, null);
-            boolean areAllVideosDownloaded = dbStore.isVideoDownloadedInSection(courseId, chapterId, sequentialId, null);
+            List<Long> downloadedList = dbStore.getDownloadedVideoDmIdsForSection(courseId, chapterId, sequentialId, null);
 
-            if (areAllVideosDownloaded) {
+            if (downloadedList.size() == totalDownloadableVideos) {
                 holder.noOfVideos.setVisibility(View.VISIBLE);
                 setRowStateOnDownload(holder, DownloadEntry.DownloadedState.DOWNLOADED, null);
-            } else if (downloadingList.size() == totalDownloadableVideos) {
+            } else if (downloadingList.size() + downloadedList.size() == totalDownloadableVideos) {
                 holder.noOfVideos.setVisibility(View.GONE);
                 setRowStateOnDownload(holder, DownloadEntry.DownloadedState.DOWNLOADING
                     , new View.OnClickListener() {

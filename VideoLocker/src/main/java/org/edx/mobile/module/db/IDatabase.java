@@ -151,6 +151,15 @@ public interface IDatabase {
      */
     public Boolean isVideoDownloadedInSection(String enrollmentId,
                                               String chapter, String section, DataCallback<Boolean> callback);
+
+    /**
+     * Returns dmId's of all downloaded videos for given section of logged in user
+     * @param enrollmentId - course which has the chapter
+     * @param chapter
+     * @param section
+     */
+    public List<Long> getDownloadedVideoDmIdsForSection(String enrollmentId, String chapter,
+                                                        String section, final DataCallback<List<Long>> callback);
     /**
      * get number of videos marked as webOnly
      * @param enrollmentId
