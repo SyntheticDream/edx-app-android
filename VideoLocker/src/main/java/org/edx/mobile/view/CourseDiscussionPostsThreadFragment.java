@@ -59,12 +59,18 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
     private DiscussionTopic discussionTopic;
 
     private DiscussionPostsFilter postsFilter = DiscussionPostsFilter.ALL;
-    private DiscussionPostsSort postsSort = DiscussionPostsSort.NONE;
+    private DiscussionPostsSort postsSort = DiscussionPostsSort.LAST_ACTIVITY_AT;
 
     private final Logger logger = new Logger(getClass().getName());
 
     private GetThreadListTask getThreadListTask;
     private GetFollowingThreadListTask getFollowingThreadListTask;
+
+    private enum EmptyQueryResultsFor {
+        FOLLOWING,
+        CATEGORY,
+        COURSE
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -83,10 +89,11 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
         super.onViewCreated(view, savedInstanceState);
 
         createNewPostTextView.setText(R.string.discussion_post_create_new_post);
+        Context context = getActivity();
         TextViewCompat.setCompoundDrawablesRelative(createNewPostTextView,
-                new IconDrawable(getActivity(), Iconify.IconValue.fa_plus_circle)
-                        .sizeRes(R.dimen.icon_view_standard_width_height)
-                        .colorRes(R.color.edx_grayscale_neutral_white_t),
+                new IconDrawable(context, Iconify.IconValue.fa_plus_circle)
+                        .sizeRes(context, R.dimen.icon_view_standard_width_height)
+                        .colorRes(context, R.color.edx_grayscale_neutral_white_t),
                 null, null, null
         );
         createNewPostLayout.setOnClickListener(new View.OnClickListener() {
@@ -111,9 +118,9 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
                         Context context = getActivity();
                         LayerDrawable layeredIcon = new LayerDrawable(new Drawable[]{
                                 new IconDrawable(context, Iconify.IconValue.fa_long_arrow_up)
-                                        .colorRes(R.color.edx_brand_primary_base),
+                                        .colorRes(context, R.color.edx_brand_primary_base),
                                 new IconDrawable(context, Iconify.IconValue.fa_long_arrow_down)
-                                        .colorRes(R.color.edx_brand_primary_base)
+                                        .colorRes(context, R.color.edx_brand_primary_base)
                         });
                         Resources resources = context.getResources();
                         final int width = resources.getDimensionPixelSize(
@@ -244,7 +251,7 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
 
                 discussionPostsAdapter.setVoteCountsEnabled(postsSort == DiscussionPostsSort.VOTE_COUNT);
                 discussionPostsAdapter.notifyDataSetChanged();
-                checkNoResultView();
+                checkNoResultView(EmptyQueryResultsFor.FOLLOWING);
             }
 
             @Override
@@ -280,7 +287,11 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
 
                 discussionPostsAdapter.setVoteCountsEnabled(postsSort == DiscussionPostsSort.VOTE_COUNT);
                 discussionPostsAdapter.notifyDataSetChanged();
-                checkNoResultView();
+                if (isAllTopics() == true) {
+                    checkNoResultView(EmptyQueryResultsFor.COURSE);
+                } else {
+                    checkNoResultView(EmptyQueryResultsFor.CATEGORY);
+                }
             }
 
             @Override
@@ -292,11 +303,25 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
         getThreadListTask.execute();
     }
 
-    private void checkNoResultView() {
+    private void checkNoResultView(EmptyQueryResultsFor query) {
         Activity activity = getActivity();
         if (activity instanceof TaskProcessCallback) {
             if (discussionPostsAdapter.getCount() == 0) {
-                String resultsText = getActivity().getResources().getString(R.string.forum_empty);
+                String resultsText = "";
+                switch (query) {
+                    case FOLLOWING:
+                        resultsText = getActivity().getResources().getString(R.string.forum_no_results_for_following);
+                        break;
+                    case CATEGORY:
+                        resultsText = getActivity().getResources().getString(R.string.forum_no_results_in_category);
+                        break;
+                    case COURSE:
+                        resultsText = getActivity().getResources().getString(R.string.forum_no_results_for_all_posts);
+                        break;
+                }
+                if (postsFilter != DiscussionPostsFilter.ALL) {
+                    resultsText += "\n" + getActivity().getResources().getString(R.string.forum_no_results_with_filter);
+                }
                 ((TaskProcessCallback) activity).onMessage(MessageType.ERROR, resultsText);
             } else {
                 ((TaskProcessCallback) activity).onMessage(MessageType.EMPTY, "");

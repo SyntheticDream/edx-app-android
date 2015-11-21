@@ -107,10 +107,13 @@ public class NavigationFragment extends RoboFragment {
     }
 
     private void loadProfileImage(@NonNull ProfileImage profileImage, @NonNull ImageView imageView) {
-        final RequestManager requestManager = Glide.with(NavigationFragment.this);
-        requestManager
-                .load(profileImage.getImageUrlLarge())
-                .into(imageView);
+        if (profileImage.hasImage()) {
+            Glide.with(NavigationFragment.this)
+                    .load(profileImage.getImageUrlLarge())
+                    .into(imageView);
+        } else {
+            imageView.setImageResource(R.drawable.xsie);
+        }
     }
 
     @Override
@@ -130,7 +133,16 @@ public class NavigationFragment extends RoboFragment {
                 nameLayout.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        environment.getRouter().showUserProfile(getActivity(), profile.username);
+                        final BaseFragmentActivity act = (BaseFragmentActivity) getActivity();
+                        act.closeDrawer();
+
+                        if (!(act instanceof UserProfileActivity)) {
+                            environment.getRouter().showUserProfileWithNavigationDrawer(getActivity(), profile.username);
+
+                            if (!(act instanceof MyCoursesListActivity)) {
+                                act.finish();
+                            }
+                        }
                     }
                 });
             }
@@ -304,7 +316,7 @@ public class NavigationFragment extends RoboFragment {
             boolean allowSocialFeatures = socialPref.getBoolean(PrefManager.Key.ALLOW_SOCIAL_FEATURES, true);
             groupsItemView.setVisibility(allowSocialFeatures ? View.VISIBLE : View.GONE);
 
-            View findCoursesItemView = getView().findViewById(R.id.panel_option_find_courses);
+            View findCoursesItemView = getView().findViewById(R.id.drawer_option_find_courses);
             boolean findCoursesEnabled = environment.getConfig().getEnrollmentConfig().isEnabled();
             findCoursesItemView.setVisibility(findCoursesEnabled ? View.VISIBLE : View.GONE);
         }
@@ -382,11 +394,15 @@ public class NavigationFragment extends RoboFragment {
     @SuppressWarnings("unused")
     public void onEventMainThread(@NonNull ProfilePhotoUpdatedEvent event) {
         if (event.getUsername().equalsIgnoreCase(profile.username)) {
-            Glide.with(NavigationFragment.this)
-                    .load(event.getUri())
-                    .skipMemoryCache(true) // URI is re-used in subsequent events; disable caching
-                    .diskCacheStrategy(DiskCacheStrategy.NONE)
-                    .into(imageView);
+            if (null == event.getUri()) {
+                imageView.setImageResource(R.drawable.xsie);
+            } else {
+                Glide.with(NavigationFragment.this)
+                        .load(event.getUri())
+                        .skipMemoryCache(true) // URI is re-used in subsequent events; disable caching
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .into(imageView);
+            }
         }
     }
 

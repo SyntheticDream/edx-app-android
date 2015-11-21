@@ -1,20 +1,25 @@
 package org.edx.mobile.model.api;
 
 import android.content.Context;
+import android.text.TextUtils;
+import android.text.format.DateUtils;
 
 import com.google.inject.Inject;
+
+import org.edx.mobile.R;
 import org.edx.mobile.social.SocialMember;
 import org.edx.mobile.util.Config;
 import org.edx.mobile.util.DateUtil;
+import org.edx.mobile.util.ResourceUtil;
 import org.edx.mobile.util.SocialUtils;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 @SuppressWarnings("serial")
 public class CourseEntry implements Serializable {
-
     private List<SocialMember> members_list;
 
     private LatestUpdateModel latest_updates;
@@ -33,6 +38,7 @@ public class CourseEntry implements Serializable {
     private String course_url;
     private String id;
     private String number;
+    private String discussion_url;
     private SocialURLModel social_urls;
     private CoursewareAccess courseware_access;
 
@@ -80,7 +86,7 @@ public class CourseEntry implements Serializable {
     }
 
     public StartType getStartType() {
-        if(start_type == null) start_type = StartType.NONE_START;
+        if(start_type == null) start_type = StartType.EMPTY;
         return start_type;
     }
 
@@ -128,31 +134,38 @@ public class CourseEntry implements Serializable {
         this.number = number;
     }
 
+    public String getDiscussionUrl(){
+        return discussion_url;
+    }
 
-    public void setCoursewareAccess(CoursewareAccess access) { this.courseware_access = access; }
+    public void setDiscussionUrl(String url){
+        discussion_url = url;
+    }
 
     public CoursewareAccess getCoursewareAccess() { return courseware_access; }
+
+    public void setCoursewareAccess(CoursewareAccess access) { this.courseware_access = access; }
 
     public boolean isStarted() {
         // check if "start" date has passed
         if (start == null)
             return false;
-        
+
         Date startDate = DateUtil.convertToDate(start);
         Date today = new Date();
-        return today.after(startDate); 
+        return today.after(startDate);
     }
-    
+
     public boolean isEnded() {
         // check if "end" date has passed
         if (end == null)
             return false;
-        
+
         Date endDate = DateUtil.convertToDate(end);
         Date today = new Date();
         return today.after(endDate);
     }
-    
+
     public boolean hasUpdates() {
         // check if latest updates available, return true if available
         if (latest_updates == null)
@@ -248,22 +261,57 @@ public class CourseEntry implements Serializable {
 
     }
 
-    public String getDescription(Context context){
-        StringBuilder detailBuilder = new StringBuilder();
-        if ( getOrg() != null){
-            detailBuilder.append( getOrg());
-        }
-        if ( getNumber() != null) {
-            if (detailBuilder.length() > 0){
-                detailBuilder.append(" | ");
-            }
-            detailBuilder.append( getNumber());
+    public String getDescription(Context context, boolean withStartDate) {
 
-        }
-        //https://openedx.atlassian.net/browse/MA-858
-        //we remove the ending data for now
+        List<CharSequence> sections = new ArrayList<>();
 
-        return detailBuilder.toString();
+        if (!TextUtils.isEmpty(org)) {
+            sections.add(org);
+        }
+
+        if (!TextUtils.isEmpty(number)) {
+            sections.add(number);
+        }
+
+        if (withStartDate) {
+            CharSequence formattedDate = getFormattedDate(context);
+            if (formattedDate != null) sections.add(formattedDate);
+        }
+
+        return TextUtils.join(" | ", sections);
     }
 
+    public String getFormattedDate(Context context) {
+        CharSequence formattedDate;
+        if (isStarted()) {
+            Date endDate = DateUtil.convertToDate(end);
+            if (endDate == null) {
+                return null;
+            } else if (isEnded()) {
+                formattedDate = ResourceUtil.getFormattedString(context.getResources(), R.string
+                        .label_ended, "date", DateUtils.formatDateTime(context, endDate.getTime()
+                        , DateUtils.FORMAT_NO_YEAR));
+            } else {
+                formattedDate = ResourceUtil.getFormattedString(context.getResources(), R.string
+                        .label_ending, "date", DateUtils.formatDateTime(context, endDate.getTime
+                        (), DateUtils.FORMAT_NO_YEAR));
+            }
+        } else {
+            if (start_type == StartType.TIMESTAMP && !TextUtils.isEmpty(start)) {
+                Date startDate = DateUtil.convertToDate(start);
+                formattedDate = ResourceUtil.getFormattedString(context.getResources(), R.string
+                        .label_starting, "date", DateUtils.formatDateTime(context, startDate
+                        .getTime(), DateUtils.FORMAT_NO_YEAR));
+            } else if (start_type == StartType.STRING && !TextUtils.isEmpty(start_display)) {
+                formattedDate = ResourceUtil.getFormattedString(context.getResources(), R.string
+                        .label_starting, "date", start_display);
+
+            } else {
+                formattedDate = ResourceUtil.getFormattedString(context.getResources(), R.string
+                        .label_starting, "date", context.getString(R.string.assessment_soon));
+            }
+        }
+
+        return formattedDate.toString().toUpperCase();
+    }
 }

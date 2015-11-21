@@ -1,6 +1,7 @@
 package org.edx.mobile.view;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -110,6 +111,12 @@ public class FormFieldSelectFragment extends RoboFragment {
                 }
             }
         }
+        if (formField.getOptions().isAllowsNone()) {
+            final TextView textView = (TextView) LayoutInflater.from(listView.getContext()).inflate(R.layout.edx_selectable_list_item, listView, false);
+            final String label = ResourceUtil.getFormattedString(listView.getContext().getResources(), R.string.edit_user_profile_option_none, "label", formField.getLabel()).toString();
+            textView.setText(label);
+            listView.addHeaderView(textView, new FormOption(label, null), true);
+        }
         listView.setAdapter(adapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -131,10 +138,11 @@ public class FormFieldSelectFragment extends RoboFragment {
             labelValueSpan.setSpan(new ForegroundColorSpan(listView.getResources().getColor(R.color.edx_grayscale_neutral_dark)), 0, labelValueSpan.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             textView.setText(ResourceUtil.getFormattedString(listView.getContext().getResources(), labelRes, labelKey, labelValueSpan));
         }
+        Context context = textView.getContext();
         TextViewCompat.setCompoundDrawablesRelativeWithIntrinsicBounds(textView,
-                new IconDrawable(textView.getContext(), icon)
-                        .sizeRes(R.dimen.edx_base)
-                        .colorRes(R.color.edx_grayscale_neutral_light)
+                new IconDrawable(context, icon)
+                        .sizeRes(context, R.dimen.edx_base)
+                        .colorRes(context, R.color.edx_grayscale_neutral_light)
                 , null, null, null);
         listView.addHeaderView(textView, new FormOption(labelValue, value), true);
     }
@@ -144,7 +152,7 @@ public class FormFieldSelectFragment extends RoboFragment {
         if (null != currentValue) {
             for (int i = 0; i < listView.getCount(); i++) {
                 final FormOption option = (FormOption) listView.getItemAtPosition(i);
-                if (null != option && option.getValue().equals(currentValue)) {
+                if (null != option && TextUtils.equals(option.getValue(), currentValue)) {
                     listView.setSelection(i);
                     listView.setItemChecked(i, true);
                     break;
