@@ -1,51 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="@color/white"
-    android:orientation="vertical">
+    android:layout_height="match_parent"
+    android:background="@color/white">
 
-    <FrameLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="@dimen/course_card_height">
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
-        <ImageView
-            android:id="@+id/header_image_view"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="fitXY"
-            tools:src="@drawable/edx_map_login"/>
+            android:layout_height="@dimen/course_card_height">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="70dp"
-            android:layout_gravity="bottom"
-            android:background="@color/transparent_white_85"
-            android:orientation="vertical"
-            android:padding="10dp">
+            <ImageView
+                android:id="@+id/header_image_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitXY"
+                tools:src="@drawable/edx_map_login" />
 
-            <org.edx.mobile.view.custom.ETextView
-                android:id="@+id/course_detail_name"
-                style="@style/course_card_title"
-                tools:text="Course Name" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="70dp"
+                android:layout_gravity="bottom"
+                android:background="@color/transparent_white_85"
+                android:orientation="horizontal">
 
-            <org.edx.mobile.view.custom.ETextView
-                android:id="@+id/course_detail_extras"
-                style="@style/course_card_course_run"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                tools:text="XX | xx | xxxxx" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="bottom"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:padding="10dp">
 
-        </LinearLayout>
+                    <org.edx.mobile.view.custom.ETextView
+                        android:id="@+id/course_detail_name"
+                        style="@style/course_card_title"
+                        tools:text="Course Name" />
 
-    </FrameLayout>
+                    <org.edx.mobile.view.custom.ETextView
+                        android:id="@+id/course_detail_extras"
+                        style="@style/course_card_course_run"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        tools:text="XX | xx | xxxxx" />
+                </LinearLayout>
 
-    <View style="@style/gray_hairline_separator" />
+                <ImageButton
+                    android:id="@+id/course_detail_share"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="bottom|right"
+                    android:background="@null"
+                    android:contentDescription="@string/share_course_button"
+                    android:padding="10dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/abc_ic_menu_share_mtrl_alpha"
+                    android:tint="@color/edx_grayscale_neutral_black_t"
+                    android:visibility="invisible"
+                    tools:visibility="visible" />
+            </LinearLayout>
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        </FrameLayout>
+
+        <View style="@style/gray_hairline_separator" />
+
 
         <LinearLayout
             android:id="@+id/dashboard_detail"
@@ -55,8 +77,8 @@
 
         </LinearLayout>
 
-    </ScrollView>
+    </LinearLayout>
 
-</LinearLayout>
+</ScrollView>
 
 

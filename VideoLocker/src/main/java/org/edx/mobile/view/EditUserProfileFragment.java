@@ -3,6 +3,7 @@ package org.edx.mobile.view;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
@@ -30,14 +31,15 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
+import com.joanzapata.iconify.IconDrawable;
+import com.joanzapata.iconify.fonts.FontAwesomeIcons;
+import com.joanzapata.iconify.internal.Animation;
+import com.joanzapata.iconify.widget.IconImageView;
 
 import org.edx.mobile.R;
 import org.edx.mobile.event.ProfilePhotoUpdatedEvent;
 import org.edx.mobile.module.analytics.ISegment;
 import org.edx.mobile.task.Task;
-import org.edx.mobile.third_party.iconify.IconDrawable;
-import org.edx.mobile.third_party.iconify.IconView;
-import org.edx.mobile.third_party.iconify.Iconify;
 import org.edx.mobile.user.Account;
 import org.edx.mobile.user.DataType;
 import org.edx.mobile.user.DeleteAccountImageTask;
@@ -140,6 +142,11 @@ public class EditUserProfileFragment extends RoboFragment {
         viewHolder = new ViewHolder(view);
         viewHolder.profileImageProgress.setVisibility(View.GONE);
         viewHolder.username.setText(username);
+        final IconDrawable icon = new IconDrawable(getActivity(), FontAwesomeIcons.fa_camera)
+                .colorRes(getActivity(), R.color.disableable_button_text)
+                .sizeRes(getActivity(), R.dimen.fa_x_small);
+        icon.setTint(Color.WHITE);
+        TextViewCompat.setCompoundDrawablesRelativeWithIntrinsicBounds(viewHolder.changePhoto, icon, null, null, null);
         viewHolder.changePhoto.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -194,7 +201,7 @@ public class EditUserProfileFragment extends RoboFragment {
 
     private void executePhotoTask(Task task) {
         viewHolder.profileImageProgress.setVisibility(View.VISIBLE);
-        viewHolder.profileImageProgress.setRotating(true);
+        viewHolder.profileImageProgress.setIconAnimation(Animation.PULSE);
         // TODO: Test this with "Don't keep activities"
         if (null != setAccountImageTask) {
             setAccountImageTask.cancel(true);
@@ -243,8 +250,8 @@ public class EditUserProfileFragment extends RoboFragment {
         public final ImageView profileImage;
         public final TextView username;
         public final ViewGroup fields;
-        public final View changePhoto;
-        public final IconView profileImageProgress;
+        public final TextView changePhoto;
+        public final IconImageView profileImageProgress;
 
         public ViewHolder(@NonNull View parent) {
             this.content = parent.findViewById(R.id.content);
@@ -252,8 +259,8 @@ public class EditUserProfileFragment extends RoboFragment {
             this.profileImage = (ImageView) parent.findViewById(R.id.profile_image);
             this.username = (TextView) parent.findViewById(R.id.username);
             this.fields = (ViewGroup) parent.findViewById(R.id.fields);
-            this.changePhoto = parent.findViewById(R.id.change_photo);
-            this.profileImageProgress = (IconView) parent.findViewById(R.id.profile_image_progress);
+            this.changePhoto = (TextView) parent.findViewById(R.id.change_photo);
+            this.profileImageProgress = (IconImageView) parent.findViewById(R.id.profile_image_progress);
         }
     }
 
@@ -264,12 +271,11 @@ public class EditUserProfileFragment extends RoboFragment {
         if (null == account || null == formDescription) {
             viewHolder.content.setVisibility(View.GONE);
             viewHolder.loadingIndicator.setVisibility(View.VISIBLE);
-            viewHolder.changePhoto.setVisibility(View.GONE);
 
         } else {
             viewHolder.content.setVisibility(View.VISIBLE);
             viewHolder.loadingIndicator.setVisibility(View.GONE);
-            viewHolder.changePhoto.setVisibility(account.requiresParentalConsent() ? View.GONE : View.VISIBLE);
+            viewHolder.changePhoto.setEnabled(!account.requiresParentalConsent());
 
             if (account.getProfileImage().hasImage()) {
                 Glide.with(viewHolder.profileImage.getContext())
@@ -510,7 +516,7 @@ public class EditUserProfileFragment extends RoboFragment {
         }}));
         Context context = parent.getContext();
         TextViewCompat.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                textView, null, null, new IconDrawable(context, Iconify.IconValue.fa_angle_right)
+                textView, null, null, new IconDrawable(context, FontAwesomeIcons.fa_angle_right)
                         .colorRes(context, R.color.edx_grayscale_neutral_light)
                         .sizeDp(context, 24), null);
         if (readOnly) {

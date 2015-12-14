@@ -28,8 +28,6 @@ import org.edx.mobile.logger.Logger;
 import org.edx.mobile.model.api.ProfileModel;
 import org.edx.mobile.module.analytics.ISegment;
 import org.edx.mobile.module.prefs.PrefManager;
-import org.edx.mobile.third_party.iconify.IconDrawable;
-import org.edx.mobile.third_party.iconify.Iconify;
 import org.edx.mobile.user.Account;
 import org.edx.mobile.user.GetAccountTask;
 import org.edx.mobile.util.InvalidLocaleException;
@@ -83,10 +81,6 @@ public class UserProfileFragment extends RoboFragment {
         super.onCreateOptionsMenu(menu, inflater);
         if (isViewingOwnProfile) {
             inflater.inflate(R.menu.edit_profile, menu);
-            Context context = getActivity();
-            menu.findItem(R.id.edit_profile).setIcon(
-                    new IconDrawable(context, Iconify.IconValue.fa_pencil)
-                            .actionBarSize(context).colorRes(context, R.color.edx_white));
         }
     }
 

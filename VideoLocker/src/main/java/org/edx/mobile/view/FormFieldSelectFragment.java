@@ -20,9 +20,11 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.joanzapata.iconify.Icon;
+import com.joanzapata.iconify.IconDrawable;
+import com.joanzapata.iconify.fonts.FontAwesomeIcons;
+
 import org.edx.mobile.R;
-import org.edx.mobile.third_party.iconify.IconDrawable;
-import org.edx.mobile.third_party.iconify.Iconify;
 import org.edx.mobile.user.FormField;
 import org.edx.mobile.user.FormOption;
 import org.edx.mobile.user.FormOptions;
@@ -69,7 +71,7 @@ public class FormFieldSelectFragment extends RoboFragment {
             }.execute();
 
         } else if (formOptions.getRangeMin() != null && formOptions.getRangeMax() != null) {
-            for (int i = formOptions.getRangeMax(); i > formOptions.getRangeMin(); --i) {
+            for (int i = formOptions.getRangeMax(); i >= formOptions.getRangeMin(); --i) {
                 options.add(new FormOption(String.valueOf(i), String.valueOf(i)));
             }
         } else if (formOptions.getValues() != null && formOptions.getValues().size() > 0) {
@@ -96,7 +98,7 @@ public class FormFieldSelectFragment extends RoboFragment {
                             "current_location",
                             locale.getDisplayCountry(),
                             locale.getCountry(),
-                            Iconify.IconValue.fa_map_marker);
+                            FontAwesomeIcons.fa_map_marker);
                     break;
                 }
                 case LANGUAGE: {
@@ -106,14 +108,14 @@ public class FormFieldSelectFragment extends RoboFragment {
                             "current_language",
                             locale.getDisplayLanguage(),
                             locale.getLanguage(),
-                            Iconify.IconValue.fa_comment);
+                            FontAwesomeIcons.fa_comment);
                     break;
                 }
             }
         }
         if (formField.getOptions().isAllowsNone()) {
             final TextView textView = (TextView) LayoutInflater.from(listView.getContext()).inflate(R.layout.edx_selectable_list_item, listView, false);
-            final String label = ResourceUtil.getFormattedString(listView.getContext().getResources(), R.string.edit_user_profile_option_none, "label", formField.getLabel()).toString();
+            final String label = formField.getOptions().getNoneLabel();
             textView.setText(label);
             listView.addHeaderView(textView, new FormOption(label, null), true);
         }
@@ -131,7 +133,7 @@ public class FormFieldSelectFragment extends RoboFragment {
         selectCurrentOption();
     }
 
-    private static void addDetectedValueHeader(@NonNull ListView listView, @StringRes int labelRes, @NonNull String labelKey, @NonNull String labelValue, @NonNull String value, @NonNull Iconify.IconValue icon) {
+    private static void addDetectedValueHeader(@NonNull ListView listView, @StringRes int labelRes, @NonNull String labelKey, @NonNull String labelValue, @NonNull String value, @NonNull Icon icon) {
         final TextView textView = (TextView) LayoutInflater.from(listView.getContext()).inflate(R.layout.edx_selectable_list_item, listView, false);
         {
             final SpannableString labelValueSpan = new SpannableString(labelValue);

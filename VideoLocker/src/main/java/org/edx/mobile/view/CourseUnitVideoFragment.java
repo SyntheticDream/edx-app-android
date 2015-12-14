@@ -159,17 +159,6 @@ public class CourseUnitVideoFragment extends CourseUnitFragment
 
         if(getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
             isLandscape = false;
-
-
-            if (!(NetworkUtil.isConnected(getActivity()))) {
-
-                AppConstants.offline_flag = true;
-            } else {
-
-                AppConstants.offline_flag = false;
-            }
-
-
         } else {
             isLandscape = true;
             // probably the landscape player view, so hide action bar
@@ -191,10 +180,12 @@ public class CourseUnitVideoFragment extends CourseUnitFragment
                 logger.error(ex);
             }
         }
-        checkVideoStatus(unit);
-        if (ViewPagerDownloadManager.instance.inInitialPhase(unit))
+        if (getUserVisibleHint()) {
+            checkVideoStatus(unit);
+        }
+        if (ViewPagerDownloadManager.instance.inInitialPhase(unit)) {
             ViewPagerDownloadManager.instance.addTask(this);
-
+        }
     }
 
     public void onResume() {
@@ -202,16 +193,14 @@ public class CourseUnitVideoFragment extends CourseUnitFragment
         if ( hasComponentCallback != null ){
             CourseComponent component = hasComponentCallback.getComponent();
             if (component != null && component.equals(unit)){
-                try {
-                    if (playerFragment != null) {
-                        playerFragment.setCallback(this);
-                        playerFragment.handleOnResume();
-                    }
-                } catch (Exception ex) {
-                    logger.error(ex);
-                }
+                setVideoPlayerState(true);
             }
         }
+    }
+
+    public void onPause(){
+        super.onPause();
+        setVideoPlayerState(false);
     }
 
     //we use user visible hint, not onResume() for video
@@ -224,84 +213,80 @@ public class CourseUnitVideoFragment extends CourseUnitFragment
     @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
-        if ( ViewPagerDownloadManager.instance.inInitialPhase(unit) )
+        if (ViewPagerDownloadManager.instance.inInitialPhase(unit))
             return;
         if (isVisibleToUser) {
-            try {
-                if (playerFragment != null) {
-                    playerFragment.setCallback(this);
-                    playerFragment.handleOnResume();
-                }
-            } catch (Exception ex) {
-                logger.error(ex);
-            }
-        }else{
+            checkVideoStatus(unit);
+            setVideoPlayerState(true);
+        } else {
             // fragment is no longer visible
-            try {
-                if (playerFragment != null) {
-                    playerFragment.setCallback(null);
-                    playerFragment.handleOnPause();
-                }
-            } catch (Exception ex) {
-                logger.error(ex);
+            if (getActivity() != null) {
+                ((BaseFragmentActivity) getActivity()).hideInfoMessage();
             }
+            setVideoPlayerState(false);
         }
     }
+
     @Override
     public void run() {
-        if ( this.isRemoving() || this.isDetached()){
+        if (this.isRemoving() || this.isDetached()) {
             ViewPagerDownloadManager.instance.done(this, false);
         } else {
-            try {
-                if (playerFragment != null) {
-                    playerFragment.setCallback(this);
-                    playerFragment.handleOnResume();
-                }
-                ViewPagerDownloadManager.instance.done(this, true);
-            } catch (Exception ex) {
-                logger.error(ex);
+            setVideoPlayerState(true);
+            ViewPagerDownloadManager.instance.done(this, true);
+        }
+    }
+
+    /**
+     * Sets the playing/paused state of the video player in {@link PlayerFragment}
+     *
+     * @param playing <code>true</code> for playing the video player, <code>false</code> for
+     *                pausing it.
+     */
+    private void setVideoPlayerState(boolean playing) {
+        if (playerFragment != null) {
+            if (playing) {
+                playerFragment.handleOnResume();
+                playerFragment.setCallback(this);
+            } else {
+                playerFragment.handleOnPause();
+                playerFragment.setCallback(null);
             }
         }
     }
 
 
     private void checkVideoStatus(VideoBlockModel unit) {
-        try {
-            final DownloadEntry entry = unit.getDownloadEntry(environment.getStorage());
-            if ( entry == null )
-                return;
+        final DownloadEntry entry = unit.getDownloadEntry(environment.getStorage());
+        if (entry == null)
+            return;
 
-            if ( entry.isDownload() ){
-                if ( entry.isVideoForWebOnly ){
-                    Toast.makeText(getActivity(), getString(R.string.video_only_on_web_short), Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if(!entry.isDownloaded()){
-                    IDialogCallback dialogCallback = new IDialogCallback() {
-                        @Override
-                        public void onPositiveClicked() {
-                            startOnlinePlay(entry);
-                        }
-                        @Override
-                        public void onNegativeClicked() {
-                            ((BaseFragmentActivity) getActivity()).showInfoMessage(getString(R.string.wifi_off_message));
-                            notifyAdapter();
-                        }
-                    };
-                    MediaConsentUtils.consentToMediaPlayback(getActivity(), dialogCallback, environment.getConfig());
-                }else{
-                    if (  AppConstants.offline_flag ){
-                        //TODO - should use interface to decouple
-                        ((CourseBaseActivity) getActivity())
-                            .showOfflineAccessMessage();
-                    } else {
-                        //Video is downloaded. Hence play
+        if (entry.isDownload()) {
+            if (entry.isVideoForWebOnly) {
+                Toast.makeText(getActivity(), getString(R.string.video_only_on_web_short),
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (!entry.isDownloaded()) {
+                IDialogCallback dialogCallback = new IDialogCallback() {
+                    @Override
+                    public void onPositiveClicked() {
                         startOnlinePlay(entry);
                     }
-                }
+
+                    @Override
+                    public void onNegativeClicked() {
+                        ((BaseFragmentActivity) getActivity()).
+                                showInfoMessage(getString(R.string.wifi_off_message));
+                        notifyAdapter();
+                    }
+                };
+                MediaConsentUtils.consentToMediaPlayback(getActivity(), dialogCallback,
+                        environment.getConfig());
+            } else if (playerFragment != null && !playerFragment.isFrozen()) {
+                //Video is downloaded. Hence play
+                startOnlinePlay(entry);
             }
-        } catch (Exception e) {
-            logger.error(e);
         }
     }
 
@@ -484,7 +469,7 @@ public class CourseUnitVideoFragment extends CourseUnitFragment
 
     private void showOpenInBrowserPanel() {
         try {
-            if (!AppConstants.offline_flag) {
+            if (NetworkUtil.isConnected(getActivity())) {
                 if (isPlayerVisible()) {
                     hideOpenInBrowserPanel();
                 } else {
@@ -518,8 +503,6 @@ public class CourseUnitVideoFragment extends CourseUnitFragment
 
     public void onOffline() {
         if (!isLandscape) {
-            AppConstants.offline_flag = true;
-
             hideOpenInBrowserPanel();
             if (!myVideosFlag) {
 
@@ -529,7 +512,6 @@ public class CourseUnitVideoFragment extends CourseUnitFragment
 
 
     public void onOnline() {
-        AppConstants.offline_flag = false;
         if (!isLandscape) {
 
             if (!myVideosFlag) {
@@ -582,7 +564,7 @@ public class CourseUnitVideoFragment extends CourseUnitFragment
         public void handleMessage(android.os.Message msg) {
             if (msg.what == MSG_UPDATE_PROGRESS) {
                 if (isActivityStarted()) {
-                    if (!AppConstants.offline_flag) {
+                    if (NetworkUtil.isConnected(getActivity())) {
 
                         sendEmptyMessageDelayed(MSG_UPDATE_PROGRESS, 3000);
                     }

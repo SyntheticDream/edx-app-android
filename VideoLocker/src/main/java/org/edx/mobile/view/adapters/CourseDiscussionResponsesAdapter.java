@@ -8,6 +8,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 
+import com.joanzapata.iconify.fonts.FontAwesomeIcons;
+import com.joanzapata.iconify.widget.IconImageView;
+
 import org.edx.mobile.R;
 import org.edx.mobile.discussion.DiscussionComment;
 import org.edx.mobile.discussion.DiscussionTextUtils;
@@ -18,8 +21,6 @@ import org.edx.mobile.task.FlagThreadTask;
 import org.edx.mobile.task.FollowThreadTask;
 import org.edx.mobile.task.VoteCommentTask;
 import org.edx.mobile.task.VoteThreadTask;
-import org.edx.mobile.third_party.iconify.IconView;
-import org.edx.mobile.third_party.iconify.Iconify;
 import org.edx.mobile.util.UiUtil;
 import org.edx.mobile.view.custom.ETextView;
 import org.edx.mobile.view.view_holders.AuthorLayoutViewHolder;
@@ -31,11 +32,9 @@ import java.util.List;
 
 import de.greenrobot.event.EventBus;
 
-public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter {
+public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter implements InfiniteScrollUtils.ListContentController<DiscussionComment> {
 
     public interface Listener {
-        void loadMoreRecord(@NonNull IPagination pagination);
-
         void onClickAuthor(@NonNull String username);
 
         void onClickAddComment(@NonNull DiscussionComment comment);
@@ -54,8 +53,7 @@ public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter {
 
     private List<DiscussionComment> discussionResponses = new ArrayList<>();
 
-    @NonNull
-    private BasePagination pagination = new BasePagination(IPagination.DEFAULT_PAGE_SIZE);
+    private boolean progressVisible = false;
 
     static class RowType {
         static final int THREAD = 0;
@@ -69,9 +67,10 @@ public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter {
         this.listener = listener;
     }
 
-    @NonNull
-    public BasePagination getPagination() {
-        return pagination;
+    @Override
+    public void setProgressVisible(boolean visible) {
+        progressVisible = visible;
+        notifyDataSetChanged();
     }
 
     @Override
@@ -86,7 +85,7 @@ public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter {
         if (viewType == RowType.MORE_BUTTON) {
             View discussionThreadRow = LayoutInflater.
                     from(parent.getContext()).
-                    inflate(R.layout.show_more_button_row, parent, false);
+                    inflate(R.layout.list_view_footer_progress, parent, false);
 
             return new ShowMoreViewHolder(discussionThreadRow);
         }
@@ -125,8 +124,8 @@ public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter {
 
         holder.threadBodyTextView.setText(DiscussionTextUtils.parseHtml(discussionThread.getRenderedBody()));
 
-        holder.threadClosedIconView.setVisibility(discussionThread.isClosed() ? View.VISIBLE : View.GONE);
-        holder.threadPinnedIconView.setVisibility(discussionThread.isPinned() ? View.VISIBLE : View.GONE);
+        holder.threadClosedIconImageView.setVisibility(discussionThread.isClosed() ? View.VISIBLE : View.GONE);
+        holder.threadPinnedIconImageView.setVisibility(discussionThread.isPinned() ? View.VISIBLE : View.GONE);
 
         bindSocialView(holder.socialLayoutViewHolder, discussionThread);
         DiscussionTextUtils.setAuthorAttributionText(holder.authorLayoutViewHolder.discussionAuthorTextView, discussionThread, new Runnable() {
@@ -215,13 +214,6 @@ public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter {
     }
 
     private void bindViewHolderToShowMoreRow(ShowMoreViewHolder holder) {
-        holder.showMoreView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                listener.loadMoreRecord(pagination);
-            }
-        });
-
     }
 
 
@@ -232,8 +224,7 @@ public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter {
 
         if (discussionThread.isClosed() && comment.getChildren().isEmpty()) {
             holder.addCommentLayout.setEnabled(false);
-        }
-        else {
+        } else {
             holder.addCommentLayout.setEnabled(true);
             holder.addCommentLayout.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -317,17 +308,16 @@ public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter {
             if (discussionThread.isClosed()) {
                 holder.numberResponsesOrCommentsLabel.setText(context.getString(
                         R.string.discussion_add_comment_disabled_title));
-                holder.numberResponsesIconView.setIcon(Iconify.IconValue.fa_lock);
-            }
-            else {
+                holder.numberResponsesIconImageView.setIcon(FontAwesomeIcons.fa_lock);
+            } else {
                 holder.numberResponsesOrCommentsLabel.setText(context.getString(
                         R.string.number_responses_or_comments_add_comment_label));
-                holder.numberResponsesIconView.setIcon(Iconify.IconValue.fa_comment);
+                holder.numberResponsesIconImageView.setIcon(FontAwesomeIcons.fa_comment);
             }
         } else {
             holder.numberResponsesOrCommentsLabel.setText(holder.numberResponsesOrCommentsLabel.getResources().
                     getQuantityString(R.plurals.number_responses_or_comments_comments_label, numChildren, numChildren));
-            holder.numberResponsesIconView.setIcon(Iconify.IconValue.fa_comment);
+            holder.numberResponsesIconImageView.setIcon(FontAwesomeIcons.fa_comment);
         }
     }
 
@@ -336,7 +326,7 @@ public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter {
         if (discussionThread == null)
             return 0;
         int total = 1 + discussionResponses.size();
-        if (pagination.mayHasMorePages())
+        if (progressVisible)
             total++;
         return total;
     }
@@ -347,43 +337,42 @@ public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter {
             return RowType.THREAD;
         }
 
-        if (pagination.mayHasMorePages() && position == getItemCount() - 1) {
+        if (progressVisible && position == getItemCount() - 1) {
             return RowType.MORE_BUTTON;
         }
 
         return RowType.RESPONSE;
     }
 
-
-    public void setDiscussionThread(DiscussionThread discussionThread) {
-        this.discussionThread = discussionThread;
-        this.discussionResponses.clear();
-        pagination.clear();
+    @Override
+    public void clear() {
+        discussionResponses.clear();
         notifyDataSetChanged();
     }
 
-    public void addPage(List<DiscussionComment> discussionResponses, boolean hasMore) {
-        this.discussionResponses.addAll(discussionResponses);
-        pagination.setHasMorePages(hasMore);
+    @Override
+    public void addAll(List<DiscussionComment> items) {
+        discussionResponses.addAll(items);
+        notifyDataSetChanged();
+    }
+
+    public void setDiscussionThread(@NonNull DiscussionThread discussionThread) {
+        this.discussionThread = discussionThread;
+        this.discussionResponses.clear();
         notifyDataSetChanged();
     }
 
     public static class ShowMoreViewHolder extends RecyclerView.ViewHolder {
-        ETextView showMoreView;
-
         public ShowMoreViewHolder(View itemView) {
             super(itemView);
-
-            showMoreView = (ETextView) itemView.
-                    findViewById(R.id.show_more_button);
         }
     }
 
     public static class DiscussionThreadViewHolder extends RecyclerView.ViewHolder {
         ETextView threadTitleTextView;
         ETextView threadBodyTextView;
-        IconView threadClosedIconView;
-        IconView threadPinnedIconView;
+        IconImageView threadClosedIconImageView;
+        IconImageView threadPinnedIconImageView;
 
         AuthorLayoutViewHolder authorLayoutViewHolder;
         NumberResponsesViewHolder numberResponsesViewHolder;
@@ -397,9 +386,9 @@ public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter {
                     findViewById(R.id.discussion_responses_thread_row_title_text_view);
             threadBodyTextView = (ETextView) itemView.
                     findViewById(R.id.discussion_responses_thread_row_body_text_view);
-            threadClosedIconView = (IconView) itemView.
+            threadClosedIconImageView = (IconImageView) itemView.
                     findViewById(R.id.discussion_responses_thread_closed_icon_view);
-            threadPinnedIconView = (IconView) itemView.
+            threadPinnedIconImageView = (IconImageView) itemView.
                     findViewById(R.id.discussion_responses_thread_row_pinned_icon_view);
 
             authorLayoutViewHolder = new AuthorLayoutViewHolder(itemView);

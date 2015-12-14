@@ -52,13 +52,13 @@
                     android:gravity="center"
                     android:orientation="horizontal">
 
-                    <org.edx.mobile.third_party.iconify.IconView
+                    <org.edx.mobile.view.custom.IconImageViewXml
                         android:layout_width="@dimen/edx_x_small"
                         android:layout_height="@dimen/edx_x_small"
                         android:layout_marginEnd="@dimen/x_small_icon_margin"
                         android:layout_marginRight="@dimen/x_small_icon_margin"
                         app:iconColor="@color/edx_brand_primary_x_light"
-                        app:iconName="fa_comment" />
+                        app:iconName="fa-comment" />
 
                     <org.edx.mobile.view.custom.ETextView
                         android:id="@+id/language_text"
@@ -78,13 +78,13 @@
                     android:gravity="center"
                     android:orientation="horizontal">
 
-                    <org.edx.mobile.third_party.iconify.IconView
+                    <org.edx.mobile.view.custom.IconImageViewXml
                         android:layout_width="@dimen/edx_x_small"
                         android:layout_height="@dimen/edx_x_small"
                         android:layout_marginEnd="@dimen/x_small_icon_margin"
                         android:layout_marginRight="@dimen/x_small_icon_margin"
                         app:iconColor="@color/edx_brand_primary_x_light"
-                        app:iconName="fa_map_marker" />
+                        app:iconName="fa-map-marker" />
 
                     <org.edx.mobile.view.custom.ETextView
                         android:id="@+id/location_text"
@@ -136,13 +136,7 @@
 
                 <org.edx.mobile.view.custom.ETextView
                     style="@style/empty_content_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginBottom="@dimen/edx_margin"
-                    android:layout_marginLeft="@dimen/edx_margin"
-                    android:layout_marginRight="@dimen/edx_margin"
-                    android:gravity="center"
+                    android:visibility="visible"
                     android:text="@string/profile_consent_needed_explanation" />
 
                 <Button

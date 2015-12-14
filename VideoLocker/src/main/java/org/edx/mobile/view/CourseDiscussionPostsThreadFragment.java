@@ -17,6 +17,9 @@ import android.widget.AdapterView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.joanzapata.iconify.IconDrawable;
+import com.joanzapata.iconify.fonts.FontAwesomeIcons;
+
 import org.edx.mobile.R;
 import org.edx.mobile.discussion.DiscussionCommentPostedEvent;
 import org.edx.mobile.discussion.DiscussionPostsFilter;
@@ -26,12 +29,10 @@ import org.edx.mobile.discussion.DiscussionThreadPostedEvent;
 import org.edx.mobile.discussion.DiscussionThreadUpdatedEvent;
 import org.edx.mobile.discussion.DiscussionTopic;
 import org.edx.mobile.discussion.TopicThreads;
-import org.edx.mobile.logger.Logger;
 import org.edx.mobile.task.GetFollowingThreadListTask;
 import org.edx.mobile.task.GetThreadListTask;
-import org.edx.mobile.third_party.iconify.IconDrawable;
-import org.edx.mobile.third_party.iconify.Iconify;
 import org.edx.mobile.view.adapters.DiscussionPostsSpinnerAdapter;
+import org.edx.mobile.view.adapters.InfiniteScrollUtils;
 import org.edx.mobile.view.common.MessageType;
 import org.edx.mobile.view.common.TaskProcessCallback;
 
@@ -61,10 +62,9 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
     private DiscussionPostsFilter postsFilter = DiscussionPostsFilter.ALL;
     private DiscussionPostsSort postsSort = DiscussionPostsSort.LAST_ACTIVITY_AT;
 
-    private final Logger logger = new Logger(getClass().getName());
-
     private GetThreadListTask getThreadListTask;
     private GetFollowingThreadListTask getFollowingThreadListTask;
+    private int nextPage = 1;
 
     private enum EmptyQueryResultsFor {
         FOLLOWING,
@@ -91,7 +91,7 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
         createNewPostTextView.setText(R.string.discussion_post_create_new_post);
         Context context = getActivity();
         TextViewCompat.setCompoundDrawablesRelative(createNewPostTextView,
-                new IconDrawable(context, Iconify.IconValue.fa_plus_circle)
+                new IconDrawable(context, FontAwesomeIcons.fa_plus_circle)
                         .sizeRes(context, R.dimen.icon_view_standard_width_height)
                         .colorRes(context, R.color.edx_grayscale_neutral_white_t),
                 null, null, null
@@ -105,7 +105,7 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
 
         discussionPostsFilterSpinner.setAdapter(new DiscussionPostsSpinnerAdapter(
                 discussionPostsFilterSpinner, DiscussionPostsFilter.values(),
-                Iconify.IconValue.fa_filter));
+                FontAwesomeIcons.fa_filter));
         discussionPostsSortSpinner.setAdapter(new DiscussionPostsSpinnerAdapter(
                 discussionPostsSortSpinner, DiscussionPostsSort.values(),
                 // Since we can't define IconDrawable in XML resources, we'll have to define
@@ -117,9 +117,9 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
                     public Drawable createIcon() {
                         Context context = getActivity();
                         LayerDrawable layeredIcon = new LayerDrawable(new Drawable[]{
-                                new IconDrawable(context, Iconify.IconValue.fa_long_arrow_up)
+                                new IconDrawable(context, FontAwesomeIcons.fa_long_arrow_up)
                                         .colorRes(context, R.color.edx_brand_primary_base),
-                                new IconDrawable(context, Iconify.IconValue.fa_long_arrow_down)
+                                new IconDrawable(context, FontAwesomeIcons.fa_long_arrow_down)
                                         .colorRes(context, R.color.edx_brand_primary_base)
                         });
                         Resources resources = context.getResources();
@@ -145,7 +145,7 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
                         (DiscussionPostsFilter) parent.getItemAtPosition(position);
                 if (postsFilter != selectedPostsFilter) {
                     postsFilter = selectedPostsFilter;
-                    populateThreadList(true);
+                    clearListAndLoadFirstPage();
                 }
             }
 
@@ -160,7 +160,7 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
                         (DiscussionPostsSort) parent.getItemAtPosition(position);
                 if (postsSort != selectedPostsSort) {
                     postsSort = selectedPostsSort;
-                    populateThreadList(true);
+                    clearListAndLoadFirstPage();
                 }
             }
 
@@ -184,6 +184,7 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
         return DiscussionTopic.FOLLOWING_TOPICS_ID.equals(discussionTopic.getIdentifier());
     }
 
+    @SuppressWarnings("unused")
     public void onEventMainThread(DiscussionThreadUpdatedEvent event) {
         // If a listed thread's following status has changed, we need to replace it to show/hide the "following" label
         for (int i = 0; i < discussionPostsAdapter.getCount(); ++i) {
@@ -194,6 +195,7 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
         }
     }
 
+    @SuppressWarnings("unused")
     public void onEventMainThread(DiscussionCommentPostedEvent event) {
         // If a new comment was posted in a listed thread, increment its comment count
         for (int i = 0; i < discussionPostsAdapter.getCount(); ++i) {
@@ -206,6 +208,7 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
         }
     }
 
+    @SuppressWarnings("unused")
     public void onEventMainThread(DiscussionThreadPostedEvent event) {
         // If a new post is created in this topic, insert it at the top of the list, after any pinned posts
         if (!isFollowingTopics() && !isAllTopics() && discussionTopic.containsThread(event.getDiscussionThread())) {
@@ -220,37 +223,32 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
     }
 
     @Override
-    protected void populateThreadList(boolean refreshView) {
-
-        if (refreshView) {
-            discussionPostsAdapter.clear();
-        }
+    public void loadNextPage(@NonNull final InfiniteScrollUtils.PageLoadCallback<DiscussionThread> callback) {
         if (isFollowingTopics()) {
-            populateFollowingThreadList();
+            populateFollowingThreadList(callback);
         } else {
-            populatePostList();
+            populatePostList(callback);
         }
     }
 
+    private void clearListAndLoadFirstPage() {
+        nextPage = 1;
+        ((TaskProcessCallback) getActivity()).onMessage(MessageType.EMPTY, "");
+        discussionPostsAdapter.setVoteCountsEnabled(postsSort == DiscussionPostsSort.VOTE_COUNT);
+        controller.reset();
+    }
 
-    private void populateFollowingThreadList() {
+    private void populateFollowingThreadList(@NonNull final InfiniteScrollUtils.PageLoadCallback<DiscussionThread> callback) {
         if (getFollowingThreadListTask != null) {
             getFollowingThreadListTask.cancel(true);
         }
 
         getFollowingThreadListTask = new GetFollowingThreadListTask(getActivity(), courseData.getCourse().getId(), postsFilter,
-                postsSort, discussionPostsAdapter.getPagination()) {
+                postsSort, nextPage) {
             @Override
             public void onSuccess(TopicThreads topicThreads) {
-                if (topicThreads != null) {
-                    logger.debug("registration success=" + topicThreads);
-                    boolean hasMore = topicThreads.next != null && topicThreads.next.length() > 0;
-                    discussionPostsAdapter.addPage(topicThreads.getResults(), hasMore);
-                    refreshListViewOnDataChange();
-                }
-
-                discussionPostsAdapter.setVoteCountsEnabled(postsSort == DiscussionPostsSort.VOTE_COUNT);
-                discussionPostsAdapter.notifyDataSetChanged();
+                final boolean hasMore = topicThreads.next != null && topicThreads.next.length() > 0;
+                callback.onPageLoaded(topicThreads.getResults(), hasMore);
                 checkNoResultView(EmptyQueryResultsFor.FOLLOWING);
             }
 
@@ -260,10 +258,11 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
                 //  hideProgress();
             }
         };
+        getFollowingThreadListTask.setProgressCallback(null);
         getFollowingThreadListTask.execute();
     }
 
-    private void populatePostList() {
+    private void populatePostList(@NonNull final InfiniteScrollUtils.PageLoadCallback<DiscussionThread> callback) {
         if (getThreadListTask != null) {
             getThreadListTask.cancel(true);
         }
@@ -274,20 +273,13 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
                 isAllTopics() ? Collections.EMPTY_LIST : discussionTopic.getAllTopicIds(),
                 postsFilter,
                 postsSort,
-                discussionPostsAdapter.getPagination()
-        ) {
+                nextPage) {
             @Override
             public void onSuccess(TopicThreads topicThreads) {
-                if (topicThreads != null) {
-                    logger.debug("registration success=" + topicThreads);
-                    boolean hasMore = topicThreads.next != null && topicThreads.next.length() > 0;
-                    discussionPostsAdapter.addPage(topicThreads.getResults(), hasMore);
-                    refreshListViewOnDataChange();
-                }
-
-                discussionPostsAdapter.setVoteCountsEnabled(postsSort == DiscussionPostsSort.VOTE_COUNT);
-                discussionPostsAdapter.notifyDataSetChanged();
-                if (isAllTopics() == true) {
+                final boolean hasMore = topicThreads.next != null && topicThreads.next.length() > 0;
+                ++nextPage;
+                callback.onPageLoaded(topicThreads.getResults(), hasMore);
+                if (isAllTopics()) {
                     checkNoResultView(EmptyQueryResultsFor.COURSE);
                 } else {
                     checkNoResultView(EmptyQueryResultsFor.CATEGORY);
@@ -300,6 +292,7 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
                 //  hideProgress();
             }
         };
+        getThreadListTask.setProgressCallback(null);
         getThreadListTask.execute();
     }
 
