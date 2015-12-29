@@ -2,7 +2,10 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="2dp" >
+    android:paddingTop="2dp"
+    android:paddingBottom="12dp"
+    android:paddingLeft="12dp"
+    android:paddingRight="12dp">
 
     <RelativeLayout
         android:id="@+id/panel_course_layout"
@@ -12,7 +15,7 @@
         android:descendantFocusability="blocksDescendants"
         android:paddingBottom="5dp">
 
-        <org.edx.mobile.view.custom.ETextView
+        <TextView
             android:id="@+id/findcourse_tv"
             style="@style/semibold_text"
             android:layout_width="match_parent"
@@ -39,7 +42,7 @@
             android:textColor="@color/white"
             android:textSize="15sp" />
         
-        <org.edx.mobile.view.custom.ETextView
+        <TextView
             android:id="@+id/course_not_listed_tv"
             style="@style/semibold_text"
             android:layout_width="wrap_content"

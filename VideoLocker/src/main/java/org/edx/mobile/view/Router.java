@@ -13,6 +13,7 @@ import android.support.v4.app.TaskStackBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import org.edx.mobile.course.CourseDetail;
 import org.edx.mobile.discussion.DiscussionComment;
 import org.edx.mobile.discussion.DiscussionThread;
 import org.edx.mobile.discussion.DiscussionTopic;
@@ -24,6 +25,7 @@ import org.edx.mobile.module.notification.NotificationDelegate;
 import org.edx.mobile.module.prefs.PrefManager;
 import org.edx.mobile.util.AppConstants;
 import org.edx.mobile.util.Config;
+import org.edx.mobile.view.dialog.CourseDiscoveryNotEnabledDialogFragment;
 
 import de.greenrobot.event.EventBus;
 
@@ -32,6 +34,7 @@ public class Router {
     public static final String EXTRA_ANNOUNCEMENTS = "announcements";
     public static final String EXTRA_BUNDLE = "bundle";
     public static final String EXTRA_COURSE_ID = "course_id";
+    public static final String EXTRA_COURSE_DETAIL = "course_detail";
     public static final String EXTRA_ENROLLMENT = "enrollment";
     public static final String EXTRA_COURSE_UNIT = "course_unit";
     public static final String EXTRA_COURSE_COMPONENT_ID = "course_component_id";
@@ -52,11 +55,20 @@ public class Router {
         sourceActivity.startActivity(downloadIntent);
     }
 
-    public void showFindCourses(Activity sourceActivity) {
-        Intent findCoursesIntent = new Intent(sourceActivity, FindCoursesActivity.class);
-        //Add this flag as multiple activities need to be created
-        findCoursesIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-        sourceActivity.startActivity(findCoursesIntent);
+    public void showFindCourses(FragmentActivity sourceActivity) {
+        if (config.getCourseDiscoveryConfig().isEnabled()) {
+            final Intent findCoursesIntent;
+            if (config.getCourseDiscoveryConfig().isNativeCourseDiscoveryEnabled()) {
+                findCoursesIntent = NativeFindCoursesActivity.newIntent(sourceActivity);
+            } else {
+                findCoursesIntent = new Intent(sourceActivity, WebViewFindCoursesActivity.class);
+            }
+            //Add this flag as multiple activities need to be created
+            findCoursesIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            sourceActivity.startActivity(findCoursesIntent);
+        } else {
+            CourseDiscoveryNotEnabledDialogFragment.show(sourceActivity);
+        }
     }
 
     public void showCourseInfo(Activity sourceActivity, String pathId) {
@@ -121,8 +133,8 @@ public class Router {
         sourceActivity.sendBroadcast(loginIntent);
     }
 
-    public void showCourseDetailTabs(Activity activity, Config config, EnrolledCoursesResponse model,
-                                     boolean announcements) {
+    public void showCourseDashboardTabs(Activity activity, Config config, EnrolledCoursesResponse model,
+                                        boolean announcements) {
 
         showCourseDashboard(activity, model, announcements);
     }
@@ -136,7 +148,7 @@ public class Router {
         final Bundle courseBundle = new Bundle();
         courseBundle.putSerializable(EXTRA_ENROLLMENT, model);
         courseBundle.putBoolean(EXTRA_ANNOUNCEMENTS, true);
-        final Intent courseDetail = new Intent(activity, CourseDetailInfoActivity.class);
+        final Intent courseDetail = new Intent(activity, CourseAnnouncementsActivity.class);
         courseDetail.putExtra( EXTRA_BUNDLE, courseBundle);
         courseDetail.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         activity.startActivity(courseDetail);
@@ -146,7 +158,7 @@ public class Router {
         final Bundle courseBundle = new Bundle();
         courseBundle.putBoolean(Router.EXTRA_ANNOUNCEMENTS, true);
         courseBundle.putString(Router.EXTRA_COURSE_ID, courseId);
-        final Intent courseDetail = new Intent(context, CourseDetailInfoActivity.class).putExtra(EXTRA_BUNDLE, courseBundle);
+        final Intent courseDetail = new Intent(context, CourseAnnouncementsActivity.class).putExtra(EXTRA_BUNDLE, courseBundle);
         // TODO: It's not essential, but we may want additional activities on the back-stack (e.g. CourseDashboardActivity)
         TaskStackBuilder.create(context)
                 .addNextIntent(courseDetail)
@@ -209,10 +221,10 @@ public class Router {
         courseBundle.putSerializable(EXTRA_ENROLLMENT, model);
         courseBundle.putBoolean(EXTRA_ANNOUNCEMENTS, announcements);
 
-        Intent courseDetail = new Intent(activity, CourseDashboardActivity.class);
-        courseDetail.putExtra( EXTRA_BUNDLE, courseBundle);
-        courseDetail.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-        activity.startActivity(courseDetail);
+        Intent courseDashboard = new Intent(activity, CourseDashboardActivity.class);
+        courseDashboard.putExtra( EXTRA_BUNDLE, courseBundle);
+        courseDashboard.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        activity.startActivity(courseDashboard);
 
     }
 
@@ -318,5 +330,9 @@ public class Router {
 
     public void showCertificate(@NonNull Context context, @NonNull EnrolledCoursesResponse courseData) {
         context.startActivity(CertificateActivity.newIntent(context, courseData));
+    }
+
+    public void showCourseDetail(@NonNull Context context, @NonNull CourseDetail courseDetail) {
+        context.startActivity(CourseDetailActivity.newIntent(context, courseDetail));
     }
 }

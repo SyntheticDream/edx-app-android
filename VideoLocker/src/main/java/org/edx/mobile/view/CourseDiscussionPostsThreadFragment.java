@@ -90,7 +90,7 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
 
         createNewPostTextView.setText(R.string.discussion_post_create_new_post);
         Context context = getActivity();
-        TextViewCompat.setCompoundDrawablesRelative(createNewPostTextView,
+        TextViewCompat.setCompoundDrawablesRelativeWithIntrinsicBounds(createNewPostTextView,
                 new IconDrawable(context, FontAwesomeIcons.fa_plus_circle)
                         .sizeRes(context, R.dimen.icon_view_standard_width_height)
                         .colorRes(context, R.color.edx_grayscale_neutral_white_t),
@@ -129,7 +129,7 @@ public class CourseDiscussionPostsThreadFragment extends CourseDiscussionPostsBa
                                 R.dimen.discussion_posts_filter_popup_icon_margin);
                         final int height = width + verticalPadding;
                         final float halfWidth = width / 2f;
-                        final int leftIconWidth = (int) FloatMath.ceil(halfWidth);
+                        final int leftIconWidth = (int) Math.ceil(halfWidth);
                         final int rightIconWidth = (int) halfWidth;
                         layeredIcon.setLayerInset(0, 0, 0, rightIconWidth, verticalPadding);
                         layeredIcon.setLayerInset(1, leftIconWidth, verticalPadding, 0, 0);

@@ -16,7 +16,6 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.google.inject.Inject;
 import com.joanzapata.iconify.fonts.FontAwesomeIcons;
-import com.joanzapata.iconify.widget.IconImageButton;
 import com.joanzapata.iconify.widget.IconImageView;
 
 import org.edx.mobile.R;
@@ -87,7 +86,7 @@ public class CourseDashboardFragment extends RoboFragment {
 
             if (courseData.isCertificateEarned() && environment.getConfig().areCertificateLinksEnabled()) {
                 final View child = inflater.inflate(R.layout.row_course_dashboard_cert, parent, false);
-                child.findViewById(R.id.get_certificate).setOnClickListener(new View.OnClickListener() {
+                child.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         environment.getRouter().showCertificate(getActivity(), courseData);
@@ -172,7 +171,7 @@ public class CourseDashboardFragment extends RoboFragment {
 
         courseTextName.setText(courseData.getCourse().getName());
         CourseEntry course = courseData.getCourse();
-        courseTextDetails.setText(course.getDescription(getActivity(), true));
+        courseTextDetails.setText(course.getDescriptionWithStartDate(getActivity()));
 
         if (environment.getConfig().isShareCourseEnabled()) {
             shareButton.setVisibility(headerImageView.VISIBLE);

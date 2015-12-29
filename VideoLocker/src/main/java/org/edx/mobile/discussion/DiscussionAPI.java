@@ -17,23 +17,16 @@
 package org.edx.mobile.discussion;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
-import com.squareup.okhttp.OkHttpClient;
 
 import org.edx.mobile.http.RetroHttpException;
-import org.edx.mobile.util.Config;
-import org.edx.mobile.util.DateUtil;
 import org.edx.mobile.util.NetworkUtil;
 
 import java.util.List;
 
 import retrofit.RestAdapter;
-import retrofit.client.OkClient;
-import retrofit.converter.GsonConverter;
 
 /*
 // TODO: fix the issue - try to simplify the callback implementation
@@ -58,42 +51,25 @@ class RetrofitAdaptor<T> extends Callback {
 */
 
 public class DiscussionAPI {
-
-
-    Config config;
-
     Context context;
-
     final DiscussionService discussionService;
 
     @Inject
-    public DiscussionAPI(Context context, Config config, OkHttpClient client) {
+    public DiscussionAPI(@NonNull Context context, @NonNull RestAdapter restAdapter) {
         this.context = context;
-        this.config = config;
-        Gson gson = new GsonBuilder()
-                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                .setDateFormat(DateUtil.ISO_8601_DATE_TIME_FORMAT)
-                .create();
-
-        RestAdapter restAdapter = new RestAdapter.Builder()
-                .setClient(new OkClient(client))
-                .setEndpoint(config.getApiHostURL())
-                .setConverter(new GsonConverter(gson))
-                .setErrorHandler(new RetroHttpExceptionHandler())
-                .setLogLevel(RestAdapter.LogLevel.FULL)
-                .build();
         discussionService = restAdapter.create(DiscussionService.class);
     }
-
 
     /**
      * as this is the meta data for course discussion info, it wont change frequently.
      * we should cache it in most cases?
+     *
      * @param courseId
      * @return
      * @throws RetroHttpException
      */
-    public CourseDiscussionInfo getCourseDiscussionInfo(String courseId, boolean preferCache) throws RetroHttpException {
+    public CourseDiscussionInfo getCourseDiscussionInfo(String courseId, boolean preferCache)
+            throws RetroHttpException {
         if (!NetworkUtil.isConnected(context)) {
             return discussionService.getCourseDiscussionInfoWithCacheEnabled(courseId);
         } else if (preferCache) {
@@ -103,52 +79,67 @@ public class DiscussionAPI {
         }
     }
 
-
     public CourseTopics getTopicList(String courseId) throws RetroHttpException {
         return discussionService.getCourseTopics(courseId);
     }
 
-    public TopicThreads getThreadList(String courseId, List<String> topicIds, String filter, String orderBy, int pageSize, int page) throws RetroHttpException {
-
+    public TopicThreads getThreadList(String courseId, List<String> topicIds, String filter,
+                                      String orderBy, int pageSize, int page)
+            throws RetroHttpException {
         return discussionService.getThreadList(courseId, topicIds, filter, orderBy, pageSize, page);
     }
 
-    public TopicThreads getFollowingThreadList(String courseId, String filter, String orderBy, int pageSize, int page) throws RetroHttpException {
-
-        return discussionService.getFollowingThreadList(courseId, "True", filter, orderBy, pageSize, page);
+    public TopicThreads getFollowingThreadList(String courseId, String filter, String orderBy,
+                                               int pageSize, int page)
+            throws RetroHttpException {
+        return discussionService.getFollowingThreadList(courseId, "True", filter, orderBy,
+                pageSize, page);
     }
 
 
-    public TopicThreads searchThreadList(String courseId, String text, int pageSize, int page) throws RetroHttpException {
+    public TopicThreads searchThreadList(String courseId, String text, int pageSize, int page)
+            throws RetroHttpException {
         return discussionService.searchThreadList(courseId, text, pageSize, page);
     }
 
     // get the responses, and all comments for each of which, of a thread
-    public ThreadComments getCommentList(String threadId, int pageSize, int page) throws RetroHttpException {
-        return discussionService.getCommentList(threadId, pageSize, page);
+    public ThreadComments getResponsesList(String threadId, int pageSize, int page)
+            throws RetroHttpException {
+        return discussionService.getResponsesList(threadId, pageSize, page);
     }
 
-    public DiscussionThread flagThread(DiscussionThread thread, Boolean flagged) throws RetroHttpException {
+    public ThreadComments getResponsesListForQuestion(String threadId, int pageSize, int page,
+                                                      boolean endorsed)
+            throws RetroHttpException {
+        return discussionService.getResponsesListForQuestion(threadId, pageSize, page, endorsed);
+    }
+
+    public DiscussionThread flagThread(DiscussionThread thread, boolean flagged)
+            throws RetroHttpException {
         FlagBody flagBody = new FlagBody(flagged);
         return discussionService.flagThread(thread.getIdentifier(), flagBody);
     }
 
-    public DiscussionComment flagComment(DiscussionComment comment, Boolean flagged) throws RetroHttpException {
+    public DiscussionComment flagComment(DiscussionComment comment, boolean flagged)
+            throws RetroHttpException {
         FlagBody flagBody = new FlagBody(flagged);
         return discussionService.flagComment(comment.getIdentifier(), flagBody);
     }
 
-    public DiscussionThread voteThread(DiscussionThread thread, Boolean voted) throws RetroHttpException {
+    public DiscussionThread voteThread(DiscussionThread thread, boolean voted)
+            throws RetroHttpException {
         VoteBody voteBody = new VoteBody(voted);
         return discussionService.voteThread(thread.getIdentifier(), voteBody);
     }
 
-    public DiscussionComment voteComment(DiscussionComment comment, Boolean voted) throws RetroHttpException {
+    public DiscussionComment voteComment(DiscussionComment comment, boolean voted)
+            throws RetroHttpException {
         VoteBody voteBody = new VoteBody(voted);
         return discussionService.voteComment(comment.getIdentifier(), voteBody);
     }
 
-    public DiscussionThread followThread(DiscussionThread thread, Boolean following) throws RetroHttpException {
+    public DiscussionThread followThread(DiscussionThread thread, boolean following)
+            throws RetroHttpException {
         FollowBody followBody = new FollowBody(following);
         return discussionService.followThread(thread.getIdentifier(), followBody);
     }
@@ -163,7 +154,8 @@ public class DiscussionAPI {
     }
 
     public DiscussionComment createComment(CommentBody commentBody) throws RetroHttpException {
-        return discussionService.createComment(commentBody.threadId, commentBody.rawBody, commentBody.parentId);
+        return discussionService.createComment(commentBody.threadId, commentBody.rawBody,
+                commentBody.parentId);
     }
 
 }

@@ -15,7 +15,7 @@
     <!-- Message for user who has successfully completed a certificate course -->
     <string name="course_details_earned_cert">You’ve passed the course.</string>
     <!-- Button that opens a full view of an earned certificate -->
-    <string name="course_details_view_cert_button">Get certificate</string>
+    <string name="course_details_view_cert_button">View Certificate</string>
     <!-- Header for list of friends in a given course. Argument is a course name -->
     <string name="friends_in_course">Friends in {courseName}</string>
     <!-- Link to web course page -->
@@ -27,6 +27,18 @@
     <string name="share_application_link_url">http://www.edx.org</string>
     <string name="share_application_picture_url">https://www.edx.org/sites/default/files/theme/edx-logo-header.png</string>
     <string name="share_application_description">Free online courses</string>
+
+    <!-- Course Discovery -->
+
+    <!-- Title of the course detail page-->
+    <string name="course_detail_title">Course Detail</string>
+    <!-- Enroll Now button text -->
+    <string name="course_detail_enroll_now_button">Enroll Now</string>
+    <!-- About This Course title -->
+    <string name="about_this_course">About this Course</string>
+    <!-- Enroll Now text-->
+    <string name="enroll_now">Enroll Now</string>
+
 
     <!-- Course Sharing -->
 
@@ -288,21 +300,20 @@
     <string name="post_attribution">{time} by {author} {author_label}</string>
 
     <!--Discussion Responses-->
-    <string name="course_discussion_responses_title">Discussion Post</string>
+    <!--Label for question type discussions that are answered-->
+    <string name="course_discussion_answered_title">Answered Question</string>
+    <!--Label for question type discussions that are unanswered-->
+    <string name="course_discussion_unanswered_title">Unanswered Question</string>
     <!--Label for adding a discussion response-->
     <string name="discussion_responses_add_response_button">@string/discussion_add_response_title</string>
     <!--Label for number of discussion responses-->
     <plurals name="number_responses_or_comments_responses_label">
-        <!--Label indicating there is only one response-->
         <item quantity="one">%s response</item>
-        <!--Label indicating there are more than one response-->
         <item quantity="other">%s responses</item>
     </plurals>
     <!--Label for number of discussion comments-->
     <plurals name="number_responses_or_comments_comments_label">
-        <!--Label indicating there is only one comment-->
         <item quantity="one">%s comment</item>
-        <!--Label indicating there are more than one response-->
         <item quantity="other">%s comments</item>
     </plurals>
     <!--Label for adding a new comment-->
@@ -317,9 +328,7 @@
     <!--Discussion Responses Action Bar-->
     <!--Label to indicate number of votes-->
     <plurals name="discussion_responses_action_bar_vote_text">
-        <!--Label indicating there is only one vote-->
         <item quantity="one">{quantity} vote</item>
-        <!--Label indicating there are more than one votes-->
         <item quantity="other">{quantity} votes</item>
     </plurals>
     <!--Label to indicate discussion response is not marked as inappropriate -->
@@ -653,12 +662,10 @@
     <!--  Email subject line when user attempts to submit feedback about the app -->
     <string name="email_subject">Customer Feedback</string>
 
-    <!-- Message indicating num of video deleted-->
+    <!-- Message indicating num of video deleted. {video_count} is a number of videos deleted, like "3".  -->
     <plurals
         name="deleted_video">
-        <!-- Message indicating one video deleted. {video_count} is 1-->
         <item quantity="one">{video_count} video deleted </item>
-        <!-- Message indicating more than one video deleted. {video_count} is number of videos deleted-->
         <item quantity="other">{video_count} videos deleted</item>
     </plurals>
 
@@ -720,7 +727,7 @@
     <!-- Button that will open a camera for taking a new profile photo -->
     <string name="edit_user_profile_remove_photo">Remove photo</string>
     <!-- Title when cropping newly selected profile photo -->
-    <string name="edit_user_profile_photo_crop_title">Crop and Resize</string>
+    <string name="edit_user_profile_photo_crop_title">Crop and resize</string>
     <!-- Button that will exit the crop tool without saving the image -->
     <string name="edit_user_profile_photo_crop_cancel">Cancel</string>
     <!-- Button that will confirm the crop region and continue to upload the cropped photo -->

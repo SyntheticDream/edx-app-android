@@ -12,8 +12,11 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
+import com.squareup.okhttp.logging.HttpLoggingInterceptor;
 
 import org.apache.http.cookie.Cookie;
+import org.edx.mobile.BuildConfig;
+import org.edx.mobile.R;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,12 +29,20 @@ import java.util.List;
 
 public class OkHttpUtil {
     public static final MediaType JSON
-        = MediaType.parse("application/json; charset=utf-8");
+            = MediaType.parse("application/json; charset=utf-8");
 
 
     private static final int cacheSize = 10 * 1024 * 1024; // 10 MiB
 
+    public static OkHttpClient getClient(@NonNull Context context) {
+        return getClient(context, false);
+    }
+
     public static OkHttpClient getOAuthBasedClient(@NonNull Context context) {
+        return getClient(context, true);
+    }
+
+    private static OkHttpClient getClient(@NonNull Context context, boolean isOAuthBased) {
         final OkHttpClient client = new OkHttpClient();
         final File cacheDirectory = new File(context.getFilesDir(), "http-cache");
         if (!cacheDirectory.exists()) {
@@ -39,24 +50,38 @@ public class OkHttpUtil {
         }
         final Cache cache = new Cache(cacheDirectory, cacheSize);
         client.setCache(cache);
-        client.interceptors().add(new OauthHeaderRequestInterceptor(context));
-        client.interceptors().add(new LoggingInterceptor());
+        List<Interceptor> interceptors = client.interceptors();
+        interceptors.add(new JsonMergePatchInterceptor());
+        interceptors.add(new UserAgentInterceptor(
+                System.getProperty("http.agent") + " " +
+                        context.getString(R.string.app_name) + "/" +
+                        BuildConfig.APPLICATION_ID + "/" +
+                        BuildConfig.VERSION_NAME));
+        if (isOAuthBased) {
+            interceptors.add(new OauthHeaderRequestInterceptor(context));
+        }
+        if (BuildConfig.DEBUG) {
+            HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+            loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+            interceptors.add(loggingInterceptor);
+        }
         return client;
     }
 
     /**
      * Sets cookie headers like "X-CSRFToken" in the given bundle.
      * This method is helpful in making API calls the way website does.
+     *
      * @return
      * @throws Exception
      */
     public static Bundle setCookieHeaders(Response response, Bundle headerBundle) throws Exception {
         Headers headers = response.headers();
 
-        for(int i=0; i<headers.size(); i++){
-            if(headers.name(i).equalsIgnoreCase("csrftoken")){
+        for (int i = 0; i < headers.size(); i++) {
+            if (headers.name(i).equalsIgnoreCase("csrftoken")) {
                 headerBundle.putString("Cookie", headers.name(i)
-                    +"=" + headers.value(i));
+                        + "=" + headers.value(i));
                 headerBundle.putString("X-CSRFToken", headers.value(i));
                 break;
             }
@@ -68,7 +93,7 @@ public class OkHttpUtil {
     /**
      * add fields to request header
      */
-    public static void addHeader(Request.Builder builder, Bundle bundle){
+    public static void addHeader(Request.Builder builder, Bundle bundle) {
         if (bundle != null) {
             for (String key : bundle.keySet()) {
                 builder.addHeader(key, bundle.getString(key));
@@ -77,31 +102,29 @@ public class OkHttpUtil {
     }
 
     /**
-     *  add fileds to request header.
+     * add fileds to request header.
      */
-    public static Response addHeader(Interceptor.Chain chain, Bundle bundle) throws IOException{
+    public static Response addHeader(Interceptor.Chain chain, Bundle bundle) throws IOException {
         Request originalRequest = chain.request();
 
         Request.Builder builder = originalRequest.newBuilder();
-        addHeader( builder, bundle);
+        addHeader(builder, bundle);
         return chain.proceed(builder.build());
     }
 
     /**
-     *  get cookie for request. [GET or POST]
+     * get cookie for request. [GET or POST]
      */
-    public static List<HttpCookie>  getCookies(Context context, String url, boolean isGet)
-        throws  Exception {
+    public static List<HttpCookie> getCookies(Context context, String url, boolean isGet)
+            throws Exception {
 
-        OkHttpClient oauthBasedClient = new OkHttpClient();
-        oauthBasedClient.interceptors().add(new OauthHeaderRequestInterceptor(context));
-        oauthBasedClient.interceptors().add(new LoggingInterceptor());
+        OkHttpClient oauthBasedClient = getOAuthBasedClient(context);
         CookieManager cookieManager = new CookieManager();
         cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
         oauthBasedClient.setCookieHandler(cookieManager);
 
         Request.Builder builder = new Request.Builder();
-        if ( !isGet ){
+        if (!isGet) {
             RequestBody body = RequestBody.create(JSON, "");
             builder.post(body);
         }
@@ -111,6 +134,7 @@ public class OkHttpUtil {
         CookieStore cookieStore = cookieManager.getCookieStore();
         return cookieStore.getCookies();
     }
+
     /**
      * Returns GET url with appended parameters.
      *
@@ -132,8 +156,9 @@ public class OkHttpUtil {
     }
 
     //http://sangupta.com/tech/convert-between-java-servlet-and-apache.html
+    @Deprecated // Deprecated because this uses org.apache.http, which is itself deprecated
     public static HttpCookie servletCookieFromApacheCookie(Cookie apacheCookie) {
-        if(apacheCookie == null) {
+        if (apacheCookie == null) {
             return null;
         }
 
@@ -143,17 +168,17 @@ public class OkHttpUtil {
         HttpCookie cookie = new HttpCookie(name, value);
 
         value = apacheCookie.getDomain();
-        if(value != null) {
+        if (value != null) {
             cookie.setDomain(value);
         }
         value = apacheCookie.getPath();
-        if(value != null) {
+        if (value != null) {
             cookie.setPath(value);
         }
         cookie.setSecure(apacheCookie.isSecure());
 
         value = apacheCookie.getComment();
-        if(value != null) {
+        if (value != null) {
             cookie.setComment(value);
         }
 
@@ -167,7 +192,7 @@ public class OkHttpUtil {
         // Reverse this to get the actual max age
 
         Date expiryDate = apacheCookie.getExpiryDate();
-        if(expiryDate != null) {
+        if (expiryDate != null) {
             long maxAge = (expiryDate.getTime() - System.currentTimeMillis()) / 1000;
             // we have to lower down, no other option
             cookie.setMaxAge((int) maxAge);
@@ -177,5 +202,5 @@ public class OkHttpUtil {
         return cookie;
     }
 
-    public static enum REQUEST_CACHE_TYPE { IGNORE_CACHE, PREFER_CACHE, ONLY_CACHE}
+    public static enum REQUEST_CACHE_TYPE {IGNORE_CACHE, PREFER_CACHE, ONLY_CACHE}
 }
