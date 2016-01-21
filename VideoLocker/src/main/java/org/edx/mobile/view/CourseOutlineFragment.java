@@ -27,6 +27,7 @@ import org.edx.mobile.model.course.BlockPath;
 import org.edx.mobile.model.course.CourseComponent;
 import org.edx.mobile.model.course.HasDownloadEntry;
 import org.edx.mobile.model.db.DownloadEntry;
+import org.edx.mobile.module.storage.DownloadCompletedEvent;
 import org.edx.mobile.services.CourseManager;
 import org.edx.mobile.services.VideoDownloadHelper;
 import org.edx.mobile.util.NetworkUtil;
@@ -36,6 +37,8 @@ import org.edx.mobile.view.common.TaskProcessCallback;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import de.greenrobot.event.EventBus;
 
 public class CourseOutlineFragment extends MyVideosBaseFragment {
 
@@ -57,6 +60,7 @@ public class CourseOutlineFragment extends MyVideosBaseFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EventBus.getDefault().register(this);
     }
 
     @Override
@@ -140,7 +144,7 @@ public class CourseOutlineFragment extends MyVideosBaseFragment {
                 Drawable modeSwitcherDrawable =
                         new IconDrawable(context, FontAwesomeIcons.fa_list)
                         .colorRes(context, R.color.edx_grayscale_neutral_light)
-                        .sizeRes(context, R.dimen.empty_list_icon_size);
+                        .sizeRes(context, R.dimen.content_unavailable_error_icon_size);
                 messageView.setCompoundDrawablesWithIntrinsicBounds(
                         null, modeSwitcherDrawable, null, null);
                 Resources resources = getResources();
@@ -261,5 +265,16 @@ public class CourseOutlineFragment extends MyVideosBaseFragment {
                 break;
             }
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
+    }
+
+    @SuppressWarnings("unused")
+    public void onEventMainThread(DownloadCompletedEvent e) {
+        adapter.notifyDataSetChanged();
     }
 }

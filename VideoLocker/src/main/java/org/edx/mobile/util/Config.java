@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Created by aleffert on 1/8/15.
@@ -24,7 +25,7 @@ import java.util.List;
 @Singleton
 public class Config {
 
-    protected final Logger logger = new Logger(getClass().getName());
+    private static final Logger logger = new Logger(Config.class.getName());
     private JsonObject mProperties;
 
     /* Individual configuration keys */
@@ -42,6 +43,7 @@ public class Config {
     private static final String ZERO_RATING = "ZERO_RATING";
     private static final String FACEBOOK = "FACEBOOK";
     private static final String GOOGLE = "GOOGLE";
+    private static final String TWITTER = "TWITTER";
     private static final String FABRIC = "FABRIC";
     private static final String NEW_RELIC = "NEW_RELIC";
     private static final String SEGMENT_IO = "SEGMENT_IO";
@@ -61,9 +63,10 @@ public class Config {
 
     public static final String CERTIFICATES_ENABLED = "CERTIFICATES_ENABLED";
 
-    public static final String SHARE_COURSE_ENABLED = "SHARE_COURSE_ENABLED";
+    public static final String COURSE_SHARING_ENABLED = "COURSE_SHARING_ENABLED";
 
     private static final String SERVER_SIDE_CHANGED_THREAD = "SERVER_SIDE_CHANGED_THREAD";
+
     /**
      * Social Sharing configuration.
      */
@@ -103,28 +106,42 @@ public class Config {
 
     /**
      * Course Enrollment configuration.
+     *
+     * If TYPE is not "webview" in any letter case, defaults to "native"
      */
     public class EnrollmentConfig {
-        private @SerializedName("ENABLED") boolean mEnabled;
-        private @SerializedName("NATIVE_COURSE_DISCOVERY_ENABLED") boolean mNativeCourseDiscoveryEnabled;
+        private @SerializedName("WEBVIEW") WebViewConfig mWebViewConfig;
+        private @SerializedName("TYPE") String mCourseEnrollmentType;
+
+        public boolean isWebviewCourseDiscoveryEnabled() {
+            if (mCourseEnrollmentType == null) { return false; }
+
+            switch (mCourseEnrollmentType.toUpperCase(Locale.US)) {
+                case "WEBVIEW":
+                    return true;
+                case "NATIVE":
+                    return false;
+                default:
+                    logger.debug("No match in config for COURSE_ENROLLMENT.TYPE:" + mCourseEnrollmentType + ". Defaulting to Native");
+                    return false;
+            }
+    }
+
+        public String getCourseSearchUrl() {
+            return mWebViewConfig.getCourseSearchUrl();
+        }
+
+        public String getCourseInfoUrlTemplate() {
+            return mWebViewConfig.getCourseInfoUrlTemplate();
+        }
+    }
+
+    public static class WebViewConfig {
         private @SerializedName("COURSE_SEARCH_URL") String mSearchUrl;
-        private @SerializedName("EXTERNAL_COURSE_SEARCH_URL") String mExternalSearchUrl;
         private @SerializedName("COURSE_INFO_URL_TEMPLATE") String mCourseInfoUrlTemplate;
-
-        public boolean isEnabled() {
-            return mEnabled;
-        }
-
-        public boolean isNativeCourseDiscoveryEnabled() {
-            return mNativeCourseDiscoveryEnabled;
-        }
 
         public String getCourseSearchUrl() {
             return mSearchUrl;
-        }
-
-        public String getExternalCourseSearchUrl() {
-            return mExternalSearchUrl;
         }
 
         public String getCourseInfoUrlTemplate() {
@@ -156,6 +173,17 @@ public class Config {
 
         public boolean isEnabled() {
             return mEnabled;
+        }
+    }
+
+    /**
+     * Twitter configuration.
+     */
+    public class TwitterConfig {
+        private @SerializedName("HASHTAG") String mHashTag;
+
+        public String getHashTag() {
+            return mHashTag;
         }
     }
 
@@ -351,9 +379,6 @@ public class Config {
         return getBoolean(PUSH_NOTIFICATIONS_FLAG, false);
     }
 
-
-
-
     /**
      * Empty or no config returns false.
      * Otherwise, returns the value from the config.
@@ -373,10 +398,11 @@ public class Config {
 
     public boolean areCertificateLinksEnabled() { return getBoolean(CERTIFICATES_ENABLED, false); }
 
-    public boolean isShareCourseEnabled() { return getBoolean(SHARE_COURSE_ENABLED, false); }
+    public boolean isCourseSharingEnabled() { return getBoolean(COURSE_SHARING_ENABLED, false); }
 
     public EnrollmentConfig getCourseDiscoveryConfig() {
         JsonElement element = getObject(COURSE_ENROLLMENT);
+
         if(element != null) {
             return new Gson().fromJson(element, EnrollmentConfig.class);
         }
@@ -438,6 +464,18 @@ public class Config {
         }
         else {
             return new GoogleConfig();
+        }
+    }
+
+    public TwitterConfig getTwitterConfig() {
+        JsonElement element = getObject(TWITTER);
+        if(element != null) {
+            Gson gson = new Gson();
+            TwitterConfig config = gson.fromJson(element, TwitterConfig.class);
+            return config;
+        }
+        else {
+            return new TwitterConfig();
         }
     }
 

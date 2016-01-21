@@ -30,14 +30,19 @@
 
     <!-- Course Discovery -->
 
-    <!-- Title of the course detail page-->
-    <string name="course_detail_title">Course Detail</string>
     <!-- Enroll Now button text -->
-    <string name="course_detail_enroll_now_button">Enroll Now</string>
-    <!-- About This Course title -->
-    <string name="about_this_course">About this Course</string>
-    <!-- Enroll Now text-->
-    <string name="enroll_now">Enroll Now</string>
+    <string name="course_detail_enroll_now_button">Enroll now</string>
+    <!-- Enroll Now button text-->
+    <string name="enroll_now_button_text">Enroll now</string>
+    <!-- View Course button text text-->
+    <string name="view_course_button_text">View course</string>
+    <!-- Floating overlay text shown to user when they succeed at enrolling in a course -->
+    <string name="you_are_now_enrolled">You are now enrolled in this course.</string>
+    <!-- Error shown user attempts to enroll in a course they are already enrolled in -->
+    <string name="already_enrolled">You are already enrolled in this course.</string>
+    <!-- Error message shown when dashboard cannot be shown from course detail view -->
+    <string name="cannot_show_dashboard">Unable to show dashboard.</string>
+
 
 
     <!-- Course Sharing -->
@@ -298,6 +303,10 @@
     <string name="discussion_priviledged_author_attribution">By %s</string>
     <!-- The date and author of a discussion comment, question, or thread, e.g. "3 days ago by Brian STAFF" -->
     <string name="post_attribution">{time} by {author} {author_label}</string>
+    <!-- Label for the visibility of a discussion post that is only visible to cohort -->
+    <string name="discussion_post_visibility_cohort">This post is visible only to {cohort}.</string>
+    <!-- Label for the visibility of a discussion post that is visible to everyone -->
+    <string name="discussion_post_visibility_everyone">This post is visible to everyone.</string>
 
     <!--Discussion Responses-->
     <!--Label for question type discussions that are answered-->
@@ -347,7 +356,9 @@
     <!-- Title in showing list of comments -->
     <string name="discussion_comments">Comments</string>
     <!-- Add comment button title in adding a new comment -->
-    <string name="discussion_add_comment_button">Add comment</string>
+    <string name="discussion_add_comment_button_label">Add comment</string>
+    <!-- Add comment button description for accessibility in adding a new comment -->
+    <string name="discussion_add_comment_button_description">Add comment button</string>
     <!-- Add your comment placeholder in adding a new comment -->
     <string name="discussion_add_comment_hint">@string/discussion_add_comment_title</string>
 
@@ -358,9 +369,11 @@
     <!-- Title in showing list of responses -->
     <string name="discussion_responses">Responses</string>
     <!-- Add response button title in adding a new response -->
-    <string name="discussion_add_response_hint">Add response</string>
-    <!-- Add your respone placeholder in adding a new response -->
-    <string name="discussion_add_response_button">@string/discussion_add_response_title</string>
+    <string name="discussion_add_response_button_label">Add response</string>
+    <!-- Add response button description for accessibility in adding a new response -->
+    <string name="discussion_add_response_button_description">Add response button</string>
+    <!-- Add your response placeholder in adding a new response -->
+    <string name="discussion_add_response_hint">@string/discussion_add_response_title</string>
 
     <!-- Title placeholder in adding a new post -->
     <string name="discussion_post_title">Title</string>
@@ -369,9 +382,13 @@
     <!-- Label for selected topic when creating a post -->
     <string name="discussion_add_post_topic_selection">Topic: {topic}</string>
     <!-- Add post button title in adding a new discussion -->
-    <string name="discussion_add_post">Post discussion</string>
+    <string name="discussion_add_post_button_label">Post discussion</string>
+    <!-- Add post button description for accessibility in adding a new discussion -->
+    <string name="discussion_add_post_button_description">Post discussion button</string>
     <!-- Add post button title in adding a new post -->
-    <string name="discussion_add_question">Post question</string>
+    <string name="discussion_add_question_button_label">Post question</string>
+    <!-- Add post button content description for accessibility in adding a new post -->
+    <string name="discussion_add_question_button_description">Post question button</string>
     <!-- Add your post placeholder in adding a new post -->
     <string name="discussion_body_hint_discussion">@string/discussion_title</string>
     <!-- Add your post placeholder in adding a new post -->
@@ -594,10 +611,6 @@
     <string name="course_content_available_text">This course hasn’t started yet. Come back on {start_time} to see your videos.</string>
     <!-- Button text, allowing user to open the platform's website in a web browser -->
     <string name="open_destination_btn_text">Open {platform_destination} in my browser</string>
-    <!-- Message shown when linking to the external course list when in app course registration is not enabled -->
-    <string name="find_courses_dialog_text_1">Our team is currently working hard to let you enroll in courses within the app.</string>
-    <!-- Message shown when linking to the external course list when in app course registration is not enabled -->
-    <string name="find_courses_dialog_text_2">In the meantime, &lt;b&gt;you can enroll in courses through our website&lt;/b&gt; - you’ll need to log in, enroll, and then return to the app when you’re done.</string>
     <!-- Title of find course screen -->
     <string name="find_courses_title">Find Courses</string>
     <!-- Message shown when attempting to find courses with no internet connection -->
@@ -641,11 +654,7 @@
     <!-- Message shown when enrolling in a course fails-->
     <string name="enrollment_failure">We could not enroll you in this course at this time.</string>
     <!-- Alert dialog button allowing user to repeat their attempted action -->
-    <string name="try_again">Try Again</string>
-    <!-- Floating overlay text shown to user when they succeed at enrolling in a course -->
-    <string name="you_are_now_enrolled">You have enrolled in this course</string>
-    <!-- Error shown user attempts to enroll in a course they are already enrolled in -->
-    <string name="already_enrolled">You are already enrolled in this course</string>
+    <string name="try_again">Try again</string>
     <!-- Error shown when registering an account fails -->
     <string name="sign_up_error">Your account could not be created. Try again later.</string>
 

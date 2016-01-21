@@ -1,3 +1,10 @@
+/*
+ * CourseDetailFragment
+ *
+ * Main fragment that populates the course detail screen. The course card fragment is created first
+ * and then the additional items are added if given.
+ */
+
 package org.edx.mobile.view;
 
 import android.content.Intent;
@@ -7,9 +14,13 @@ import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.google.inject.Inject;
@@ -22,13 +33,17 @@ import org.edx.mobile.core.IEdxEnvironment;
 import org.edx.mobile.course.CourseDetail;
 import org.edx.mobile.course.GetCourseDetailTask;
 import org.edx.mobile.logger.Logger;
-import org.edx.mobile.util.FileUtil;
+import org.edx.mobile.model.api.EnrolledCoursesResponse;
+import org.edx.mobile.services.ServiceManager;
+import org.edx.mobile.task.EnrollForCourseTask;
+import org.edx.mobile.task.GetEnrolledCourseTask;
+import org.edx.mobile.util.WebViewUtil;
 import org.edx.mobile.util.images.CourseCardUtils;
 import org.edx.mobile.util.images.TopAnchorFillWidthTransformation;
 import org.edx.mobile.view.custom.EdxWebView;
 import org.edx.mobile.view.custom.URLInterceptorWebViewClient;
 
-import java.io.IOException;
+import java.util.List;
 
 import roboguice.fragment.RoboFragment;
 import roboguice.inject.InjectExtra;
@@ -39,19 +54,23 @@ public class CourseDetailFragment extends RoboFragment {
     @Nullable
     private GetCourseDetailTask getCourseDetailTask;
 
-    private TextView courseTextName;
-    private TextView courseTextDetails;
-    private ImageView headerImageView;
-    private ImageView headerPlayIcon;
+    private TextView mCourseTextName;
+    private TextView mCourseTextDetails;
+    private ImageView mHeaderImageView;
+    private ImageView mHeaderPlayIcon;
 
-    private LinearLayout courseDetailLayout;
+    private LinearLayout mCourseDetailLayout;
 
-    private TextView shortDescription;
+    private TextView mShortDescription;
 
     private LinearLayout courseDetailFieldLayout;
-
-    private LinearLayout courseAbout;
+    private FrameLayout courseAbout;
     private EdxWebView courseAboutWebView;
+
+    private Button mEnrollButton;
+    private boolean mEnrolled = false;
+
+    boolean emailOptIn = true;
 
     static public final String COURSE_DETAIL = "course_detail";
 
@@ -60,7 +79,6 @@ public class CourseDetailFragment extends RoboFragment {
 
 
     protected final Logger logger = new Logger(getClass().getName());
-
 
     @Inject
     IEdxEnvironment environment;
@@ -83,13 +101,13 @@ public class CourseDetailFragment extends RoboFragment {
         // Course Card View
         View view;
         view = inflater.inflate(R.layout.fragment_course_dashboard, container, false);
-        courseTextName = (TextView) view.findViewById(R.id.course_detail_name);
-        courseTextDetails = (TextView) view.findViewById(R.id.course_detail_extras);
-        headerImageView = (ImageView) view.findViewById(R.id.header_image_view);
-        headerPlayIcon = (ImageView) view.findViewById(R.id.header_play_icon);
-        courseDetailLayout = (LinearLayout) view.findViewById(R.id.dashboard_detail);
+        mCourseTextName = (TextView) view.findViewById(R.id.course_detail_name);
+        mCourseTextDetails = (TextView) view.findViewById(R.id.course_detail_extras);
+        mHeaderImageView = (ImageView) view.findViewById(R.id.header_image_view);
+        mHeaderPlayIcon = (ImageView) view.findViewById(R.id.header_play_icon);
+        mCourseDetailLayout = (LinearLayout) view.findViewById(R.id.dashboard_detail);
 
-        headerPlayIcon.setOnClickListener(new View.OnClickListener() {
+        mHeaderPlayIcon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Uri uri = Uri.parse(courseDetail.media.course_video.uri);
@@ -97,6 +115,7 @@ public class CourseDetailFragment extends RoboFragment {
                 startActivity(intent);
             }
         });
+
         return view;
     }
 
@@ -113,32 +132,32 @@ public class CourseDetailFragment extends RoboFragment {
 
         // Short Description
         final LayoutInflater inflater = LayoutInflater.from(getActivity());
-        final View child = inflater.inflate(R.layout.fragment_course_detail, courseDetailLayout, false);
-        shortDescription = (TextView) child.findViewById(R.id.course_detail_short_description);
+        final View child = inflater.inflate(R.layout.fragment_course_detail, mCourseDetailLayout, false);
+        mShortDescription = (TextView) child.findViewById(R.id.course_detail_short_description);
         if (courseDetail.short_description == null || courseDetail.short_description.isEmpty()) {
-            ((ViewGroup) shortDescription.getParent()).removeView(shortDescription);
+            ((ViewGroup) mShortDescription.getParent()).removeView(mShortDescription);
         }
+        mCourseDetailLayout.addView(child);
 
-        courseDetailLayout.addView(child);
+        // Enrollment Button
+        mEnrollButton = (Button) child.findViewById(R.id.button_enroll_now);
+        configureEnrollButton();
 
-        // Course Detail Fields - if any fields exist
+        // Course Detail Fields - Each field will be created manually.
 
         courseDetailFieldLayout = (LinearLayout) view.findViewById(R.id.course_detail_fields);
         if (courseDetail.effort != null && !courseDetail.effort.isEmpty()) {
-            ViewHolder holder = createCourseDetailFieldViewHolder(inflater, courseDetailLayout);
+            ViewHolder holder = createCourseDetailFieldViewHolder(inflater, mCourseDetailLayout);
             holder.rowIcon.setIcon(FontAwesomeIcons.fa_dashboard);
             holder.rowFieldName.setText("Effort:");
             holder.rowFieldText.setText(courseDetail.effort);
         }
 
         //  About this Course
-        courseAbout = (LinearLayout) view.findViewById(R.id.course_detail_course_about);
+        courseAbout = (FrameLayout) view.findViewById(R.id.course_detail_course_about);
         courseAboutWebView = (EdxWebView) courseAbout.findViewById(R.id.course_detail_course_about_webview);
     }
 
-    /**
-     * Populates the information for course details.
-     */
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -146,8 +165,8 @@ public class CourseDetailFragment extends RoboFragment {
         setCourseImage();
         setCourseVideoButton();
         setCourseCardText();
-        shortDescription.setText(courseDetail.short_description);
-        setAboutThisCourse();
+        mShortDescription.setText(courseDetail.short_description);
+        populateAboutThisCourse();
     }
 
     private void setCourseCardText() {
@@ -157,8 +176,8 @@ public class CourseDetailFragment extends RoboFragment {
                 courseDetail.end,
                 courseDetail.start_type,
                 courseDetail.start_display);
-        courseTextDetails.setText(CourseCardUtils.getDescription(courseDetail.org, courseDetail.number, formattedDate));
-        courseTextName.setText(courseDetail.name);
+        mCourseTextDetails.setText(CourseCardUtils.getDescription(courseDetail.org, courseDetail.number, formattedDate));
+        mCourseTextName.setText(courseDetail.name);
     }
 
     private void setCourseImage() {
@@ -167,14 +186,17 @@ public class CourseDetailFragment extends RoboFragment {
                 .load(headerImageUrl)
                 .placeholder(R.drawable.edx_map_login)
                 .transform(new TopAnchorFillWidthTransformation(getActivity()))
-                .into(headerImageView);
+                .into(mHeaderImageView);
     }
 
+    /**
+     * Shows and enables the play button if the video url was provided.
+     */
     private void setCourseVideoButton() {
         if (courseDetail.media.course_video.uri == null || courseDetail.media.course_video.uri.isEmpty()) {
-            headerPlayIcon.setEnabled(false);
+            mHeaderPlayIcon.setEnabled(false);
         } else {
-            headerPlayIcon.setVisibility(headerPlayIcon.VISIBLE);
+            mHeaderPlayIcon.setVisibility(mHeaderPlayIcon.VISIBLE);
         }
     }
 
@@ -182,15 +204,14 @@ public class CourseDetailFragment extends RoboFragment {
      * Makes a call the the course details api and sets the overview if given. If there is no
      * overview, remove the courseAbout view.
      */
-    private void setAboutThisCourse() {
+    private void populateAboutThisCourse() {
         getCourseDetailTask = new GetCourseDetailTask(getActivity(), courseDetail.course_id) {
             @Override
             protected void onSuccess(CourseDetail courseDetail) throws Exception {
                 super.onSuccess(courseDetail);
                 if (courseDetail.overview != null && !courseDetail.overview.isEmpty()) {
-                    setAboutThisCourse(courseDetail.overview);
-                }
-                else {
+                    populateAboutThisCourse(courseDetail.overview);
+                } else {
                     courseAbout.setVisibility(View.GONE);
                 }
             }
@@ -201,8 +222,6 @@ public class CourseDetailFragment extends RoboFragment {
                 showErrorMessage(e);
             }
         };
-
-        getCourseDetailTask.setProgressCallback(null);
         getCourseDetailTask.execute();
     }
 
@@ -211,29 +230,20 @@ public class CourseDetailFragment extends RoboFragment {
      *
      * @param overview A string that can contain html tags
      */
-    private void setAboutThisCourse(String overview) {
+    private void populateAboutThisCourse(String overview) {
         courseAbout.setVisibility(View.VISIBLE);
         URLInterceptorWebViewClient client = new URLInterceptorWebViewClient(
                 getActivity(), courseAboutWebView);
         client.setAllLinksAsExternal(true);
 
-        StringBuffer buff = new StringBuffer();
-        buff.append("<head>");
-        buff.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-        try {
-            String cssFileContent = FileUtil.loadTextFileFromAssets(getActivity(), "css/render-html-in-webview.css");
-            buff.append("<style>");
-            buff.append(cssFileContent);
-            buff.append("</style>");
-        } catch (IOException e) {
-            logger.error(e);
-        }
-        buff.append("</head>");
+        StringBuilder buff = WebViewUtil.getIntialWebviewBuffer(getActivity(), logger);
+
         buff.append("<body>");
         buff.append("<div class=\"header\">");
         buff.append(overview);
         buff.append("</div>");
         buff.append("</body>");
+
         courseAboutWebView.clearCache(true);
         courseAboutWebView.loadDataWithBaseURL(environment.getConfig().getApiHostURL(), buff.toString(), "text/html", HTTP.UTF_8, null);
     }
@@ -259,5 +269,104 @@ public class CourseDetailFragment extends RoboFragment {
         IconImageView rowIcon;
         TextView rowFieldName;
         TextView rowFieldText;
+    }
+
+
+    /**
+     * Sets the onClickListener and the text for the enrollment button.
+     *
+     * If the current course is found in the list of cached course enrollment list, the button will
+     * be for viewing a course, otherwise, it will be used to enroll in a course. One clicked, user
+     * is then taken to the dashboard for target course.
+     */
+    private void configureEnrollButton() {
+        ServiceManager api = environment.getServiceManager();
+        // This call should already be cached, if not, set button as if not enrolled.
+        try {
+            List<EnrolledCoursesResponse> enrolledCoursesResponse = api.getEnrolledCourses(true);
+            for (EnrolledCoursesResponse course : enrolledCoursesResponse) {
+                if (course.getCourse().getId().equals(courseDetail.course_id)) {
+                    mEnrolled = true;
+                }
+            }
+        } catch (Exception ex) {
+            logger.debug("Unable to get cached enrollments list");
+        }
+
+        if (mEnrolled) {
+            mEnrollButton.setText(R.string.view_course_button_text);
+        } else {
+            mEnrollButton.setText(R.string.enroll_now_button_text);
+        }
+
+        mEnrollButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!mEnrolled) {
+                    enrollInCourse();
+                } else {
+                    openCourseDashboard();
+                }
+            }
+        });
+    }
+
+    /**
+     * Enroll in a course, then send a local broadcast to notify
+     * {@link org.edx.mobile.view.MyCoursesListActivity} to refresh when it is resumed. Then open
+     * the course dashboard of the enrolled course.
+     */
+    public void enrollInCourse() {
+        EnrollForCourseTask enrollForCourseTask = new EnrollForCourseTask(getActivity(),
+                courseDetail.course_id, emailOptIn) {
+            @Override
+            public void onSuccess(Void result) {
+                mEnrolled = true;
+                logger.debug("Enrollment successful:" + courseDetail.course_id);
+
+                mEnrollButton.setText(R.string.view_course_button_text);
+                Toast.makeText(getContext(), R.string.you_are_now_enrolled, Toast.LENGTH_SHORT).show();
+
+                GetEnrolledCourseTask getEnrolledCourseTask =
+                        new GetEnrolledCourseTask(getActivity(), courseDetail.course_id) {
+                            @Override
+                            public void onSuccess(EnrolledCoursesResponse course) {
+                                environment.getRouter().showCourseDashboardTabs(getActivity(), environment.getConfig(), course, false);
+                            }
+
+                            @Override
+                            public void onException(Exception ex) {
+                                logger.error(ex);
+                                Toast.makeText(getContext(), R.string.cannot_show_dashboard, Toast.LENGTH_SHORT).show();
+                            }
+                        };
+                getEnrolledCourseTask.execute();
+            }
+
+            @Override
+            public void onException(Exception ex) {
+                logger.error(ex);
+                Toast.makeText(getContext(), R.string.enrollment_failure, Toast.LENGTH_SHORT).show();
+            }
+        };
+        enrollForCourseTask.execute();
+    }
+
+    /**
+     * Open course dashboard for given course from the enrollments list cache.
+     */
+    private void openCourseDashboard() {
+        ServiceManager api = environment.getServiceManager();
+        try {
+            List<EnrolledCoursesResponse> enrolledCoursesResponse = api.getEnrolledCourses(true);
+            for (EnrolledCoursesResponse course : enrolledCoursesResponse) {
+                if (course.getCourse().getId().equals(courseDetail.course_id)) {
+                    environment.getRouter().showCourseDashboardTabs(getActivity(), environment.getConfig(), course, false);
+                }
+            }
+        } catch (Exception exception) {
+            logger.debug(exception.toString());
+            Toast.makeText(getContext(), R.string.cannot_show_dashboard, Toast.LENGTH_SHORT).show();
+        }
     }
 }

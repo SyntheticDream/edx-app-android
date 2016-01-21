@@ -7,7 +7,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import com.google.inject.Inject;
 
@@ -107,7 +106,7 @@ public class NativeFindCoursesFragment extends RoboFragment {
 
         public ViewHolder(View view) {
             this.listView = (ListView) view.findViewById(R.id.course_list);
-            this.loadingIndicator = view.findViewById(R.id.api_spinner);
+            this.loadingIndicator = view.findViewById(R.id.loading_indicator);
         }
     }
 }

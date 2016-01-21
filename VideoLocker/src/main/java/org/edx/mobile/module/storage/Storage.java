@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import de.greenrobot.event.EventBus;
+
 @Singleton
 public class Storage implements IStorage {
 
@@ -122,6 +124,7 @@ public class Storage implements IStorage {
             // if only one video exists, then mark it as DELETED
             // Also, remove its downloaded file
             dm.removeDownload(model.getDmId());
+            deleteFile(model.getFilePath());
         } else {
             // there are other videos who have same video URL,
             // So, we can't delete the downloaded file
@@ -447,6 +450,7 @@ public class Storage implements IStorage {
                     }
                     rowsAffected = db.updateDownloadCompleteInfoByDmId(dmId, e, null);
                     callback.sendResult(e);
+                    EventBus.getDefault().post(new DownloadCompletedEvent());
                 }
 
             } else {
