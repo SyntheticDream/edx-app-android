@@ -3,6 +3,7 @@ package org.edx.mobile.view;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -25,7 +26,9 @@ import com.facebook.Session;
 import com.facebook.SessionState;
 import com.google.inject.Inject;
 
+import org.edx.mobile.BuildConfig;
 import org.edx.mobile.R;
+import org.edx.mobile.base.BaseFragment;
 import org.edx.mobile.base.BaseFragmentActivity;
 import org.edx.mobile.core.IEdxEnvironment;
 import org.edx.mobile.event.ProfilePhotoUpdatedEvent;
@@ -34,20 +37,19 @@ import org.edx.mobile.model.api.ProfileModel;
 import org.edx.mobile.module.analytics.ISegment;
 import org.edx.mobile.module.facebook.IUiLifecycleHelper;
 import org.edx.mobile.module.prefs.PrefManager;
+import org.edx.mobile.profiles.UserProfileActivity;
 import org.edx.mobile.user.Account;
 import org.edx.mobile.user.GetAccountTask;
 import org.edx.mobile.user.ProfileImage;
 import org.edx.mobile.util.Config;
 import org.edx.mobile.util.EmailUtil;
-import org.edx.mobile.util.PropertyUtil;
 import org.edx.mobile.view.dialog.IDialogCallback;
 import org.edx.mobile.view.dialog.NetworkCheckDialogFragment;
 
 import de.greenrobot.event.EventBus;
-import roboguice.fragment.RoboFragment;
 
 
-public class NavigationFragment extends RoboFragment {
+public class NavigationFragment extends BaseFragment {
 
     private static final String TAG = "NavigationFragment";
 
@@ -211,24 +213,6 @@ public class NavigationFragment extends RoboFragment {
             }
         });
 
-        TextView tvMyGroups = (TextView) layout.findViewById(R.id.drawer_option_my_groups);
-        tvMyGroups.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Activity act = getActivity();
-                ((BaseFragmentActivity) act).closeDrawer();
-
-                if (!(act instanceof MyGroupsListActivity)) {
-                    environment.getRouter().showMyGroups(act);
-
-                    if (!(act instanceof MyCoursesListActivity)) {
-                        act.finish();
-                    }
-                }
-
-            }
-        });
-
         TextView tvSettings = (TextView) layout.findViewById(R.id.drawer_option_my_settings);
         tvSettings.setOnClickListener(new OnClickListener() {
             @Override
@@ -252,8 +236,13 @@ public class NavigationFragment extends RoboFragment {
             public void onClick(View v) {
                 String to = environment.getConfig().getFeedbackEmailAddress();
                 String subject = getString(R.string.email_subject);
-                String email = "";
-                EmailUtil.sendEmail(getActivity(), to, subject, email, environment.getConfig());
+
+                String osVersionText = String.format("%s %s", getString(R.string.android_os_version), android.os.Build.VERSION.RELEASE);
+                String appVersionText = String.format("%s %s", getString(R.string.app_version), BuildConfig.VERSION_NAME);
+                String deviceModelText = String.format("%s %s", getString(R.string.android_device_model), Build.MODEL);
+                String feedbackText = getString(R.string.insert_feedback);
+                String body = osVersionText + "\n" + appVersionText + "\n" + deviceModelText + "\n\n" + feedbackText;
+                EmailUtil.openEmailClient(getActivity(), to, subject, body, environment.getConfig());
             }
         });
 
@@ -276,20 +265,8 @@ public class NavigationFragment extends RoboFragment {
             }
         });
 
-
-        TextView version_tv = (TextView) layout.findViewById(R.id.tv_version_no);
-        try {
-            String versionName = PropertyUtil.getManifestVersionName(getActivity());
-
-            if (versionName != null) {
-                String envDisplayName = environment.getConfig().getEnvironmentDisplayName();
-                String text = String.format("%s %s %s",
-                        getString(R.string.label_version), versionName, envDisplayName);
-                version_tv.setText(text);
-            }
-        } catch (Exception e) {
-            logger.error(e);
-        }
+        ((TextView) layout.findViewById(R.id.tv_version_no)).setText(String.format("%s %s %s",
+                getString(R.string.label_version), BuildConfig.VERSION_NAME, environment.getConfig().getEnvironmentDisplayName()));
 
         return layout;
     }
@@ -298,12 +275,6 @@ public class NavigationFragment extends RoboFragment {
     public void onResume() {
         super.onResume();
         uiLifecycleHelper.onResume();
-
-        if (getView() != null) {
-            View groupsItemView = getView().findViewById(R.id.drawer_option_my_groups);
-            boolean allowSocialFeatures = socialPref.getBoolean(PrefManager.Key.ALLOW_SOCIAL_FEATURES, true);
-            groupsItemView.setVisibility(allowSocialFeatures ? View.VISIBLE : View.GONE);
-        }
     }
 
     @Override

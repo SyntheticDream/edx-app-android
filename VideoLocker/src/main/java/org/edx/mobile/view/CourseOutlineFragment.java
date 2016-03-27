@@ -170,7 +170,7 @@ public class CourseOutlineFragment extends MyVideosBaseFragment {
             adapter = new CourseOutlineAdapter(getActivity(), environment.getDatabase(),
                     environment.getStorage(), new CourseOutlineAdapter.DownloadListener() {
                 @Override
-                public void download(List<HasDownloadEntry> models) {
+                public void download(List<? extends HasDownloadEntry> models) {
                     CourseOutlineActivity activity = (CourseOutlineActivity) getActivity();
                     if (NetworkUtil.verifyDownloadPossible(activity)) {
                         downloadManager.downloadVideos(models, getActivity(),
@@ -257,7 +257,6 @@ public class CourseOutlineFragment extends MyVideosBaseFragment {
                                     environment.getRouter().showCourseContainerOutline(CourseOutlineFragment.this,
                                             REQUEST_SHOW_COURSE_UNIT_DETAIL, courseData, nextComp.getId(), leafCompId);
                                 }
-                                getActivity().overridePendingTransition(R.anim.slide_in_from_start, R.anim.slide_out_to_end);
                             }
                         }
                     }

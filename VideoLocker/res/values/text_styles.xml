@@ -77,7 +77,7 @@
         <item name="android:textColorHint">@color/hint_grey_text</item>
     </style>
 
-    <style name="downloading_message">
+    <style name="flying_message">
         <item name="android:gravity">center</item>
         <item name="android:paddingLeft">15dp</item>
         <item name="android:paddingRight">15dp</item>
@@ -293,6 +293,8 @@
         <item name="android:textSize">@dimen/edx_xxx_small</item>
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:drawablePadding">@dimen/discussion_responses_thread_text_view_spacing</item>
     </style>
 
 </resources>

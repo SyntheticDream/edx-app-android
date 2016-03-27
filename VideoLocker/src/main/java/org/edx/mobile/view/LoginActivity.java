@@ -15,6 +15,7 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import org.edx.mobile.BuildConfig;
 import org.edx.mobile.R;
 import org.edx.mobile.base.BaseFragmentActivity;
 import org.edx.mobile.exception.LoginErrorMessage;
@@ -30,7 +31,6 @@ import org.edx.mobile.task.LoginTask;
 import org.edx.mobile.task.Task;
 import org.edx.mobile.util.Config;
 import org.edx.mobile.util.NetworkUtil;
-import org.edx.mobile.util.PropertyUtil;
 import org.edx.mobile.util.ResourceUtil;
 import org.edx.mobile.util.ViewAnimationUtil;
 import org.edx.mobile.view.dialog.ResetPasswordDialog;
@@ -63,7 +63,6 @@ public class LoginActivity extends BaseFragmentActivity implements SocialLoginDe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        overridePendingTransition(R.anim.slide_in_from_bottom, R.anim.no_transition);
 
         hideSoftKeypad();
 
@@ -164,7 +163,7 @@ public class LoginActivity extends BaseFragmentActivity implements SocialLoginDe
 
             if (envDisplayName != null && envDisplayName.length() > 0) {
                 version_tv.setVisibility(View.VISIBLE);
-                String versionName = PropertyUtil.getManifestVersionName(this);
+                String versionName = BuildConfig.VERSION_NAME;
                 String text = String.format("%s %s %s",
                         getString(R.string.label_version), versionName, envDisplayName);
                 version_tv.setText(text);
@@ -275,13 +274,13 @@ public class LoginActivity extends BaseFragmentActivity implements SocialLoginDe
                                 throw new LoginException(errorMsg);
                             }
                         } catch (LoginException ex) {
-                            logger.error(ex);
-                            handle(ex);
+                            super.onException(ex);
                         }
                     }
 
                     @Override
                     public void onException(Exception ex) {
+                        super.onException(ex);
                         onUserLoginFailure(ex, null, null);
                     }
 
@@ -345,8 +344,7 @@ public class LoginActivity extends BaseFragmentActivity implements SocialLoginDe
 
     public void showEulaDialog() {
         clearDialogs();
-        showWebDialog(getString(R.string.eula_file_link),
-                getString(R.string.end_user_title));
+        environment.getRouter().showWebViewDialog(this, getString(R.string.eula_file_link), getString(R.string.end_user_title));
     }
 
     public void showResetFailure(String text) {
@@ -472,14 +470,6 @@ public class LoginActivity extends BaseFragmentActivity implements SocialLoginDe
             logger.error(ex);
         }
     }
-
-
-    @Override
-    public void finish() {
-        super.finish();
-        overridePendingTransition(R.anim.no_transition, R.anim.slide_out_to_bottom);
-    }
-
 
     @Override
     public boolean tryToSetUIInteraction(boolean enable) {

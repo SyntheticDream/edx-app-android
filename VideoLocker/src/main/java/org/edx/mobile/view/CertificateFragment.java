@@ -26,10 +26,10 @@ import org.edx.mobile.view.custom.URLInterceptorWebViewClient;
 import java.util.HashMap;
 import java.util.Map;
 
-import roboguice.fragment.RoboFragment;
+import org.edx.mobile.base.BaseFragment;
 import roboguice.inject.InjectExtra;
 
-public class CertificateFragment extends RoboFragment {
+public class CertificateFragment extends BaseFragment {
 
     static public final String TAG = CertificateFragment.class.getCanonicalName();
     static public final String ENROLLMENT = "enrollment";
@@ -122,5 +122,23 @@ public class CertificateFragment extends RoboFragment {
         EdxCookieManager.getSharedInstance().clearWebWiewCookie(getActivity());
 
         webview.loadUrl(courseData.getCertificateURL());
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        webview.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        webview.onPause();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        webview.destroy();
     }
 }

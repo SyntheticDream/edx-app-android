@@ -10,6 +10,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import org.edx.mobile.R;
+import org.edx.mobile.model.Page;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -66,13 +67,45 @@ public class InfiniteScrollUtils {
         void loadNextPage(@NonNull PageLoadCallback<T> callback);
     }
 
-    public interface PageLoadCallback<T> {
-        void onPartialPageLoaded(List<T> newItems);
-        void onPageLoaded(List<T> newItems, boolean hasMore);
+    public static abstract class PageLoadCallback<T> {
+        /**
+         * Callback for new page load, which terminates the loading
+         * controller if it's the last one.
+         *
+         * @param newPage The new page.
+         */
+        public final void onPageLoaded(Page<T> newPage) {
+            onPageLoaded(newPage.getResults(), newPage.hasNext());
+        }
+
+        /**
+         * Callback for new page load, which assumes that there
+         * are more to follow.
+         *
+         * @param newItems A list of the items in the new page.
+         */
+        public final void onPageLoaded(List<T> newItems) {
+            onPageLoaded(newItems, true);
+        }
+
+        /**
+         * Callback for new page load, which terminates the loading
+         * controller if it's the last one.
+         *
+         * @param newItems A list of the items in the new page.
+         * @param hasMore Whether there are more pages to load.
+         */
+        public abstract void onPageLoaded(List<T> newItems, boolean hasMore);
+
+        /**
+         * Callback for receiving an error during the page load.
+         */
+        public abstract void onError();
     }
 
     public interface InfiniteListController {
         void reset();
+        void resetSilently();
     }
 
     public static class PageLoadController<T> implements InfiniteListController {
@@ -96,28 +129,49 @@ public class InfiniteScrollUtils {
             }
         }
 
+        /**
+         * This function simply shows a spinner while loading the next page.
+         */
         private void onLoadMore() {
-            final int instanceLoadId = activeLoadId.get();
-            adapter.setProgressVisible(true);
-            pageLoader.loadNextPage(new PageLoadCallback<T>() {
-                @Override
-                public void onPartialPageLoaded(List<T> newItems) {
-                    if (isAbandoned()) {
-                        return;
-                    }
-                    adapter.addAll(newItems);
-                }
+            onLoadMore(false);
+        }
 
+        /**
+         * This function allows us to control the visibility of progress and lazily clear adapter
+         * after a page has loaded.
+         *
+         * @param isRefreshingSilently <code>true</code> If we're doing a silent refresh,
+         *                             <code>false</code> if pagination is being done as usual.
+         */
+        private void onLoadMore(final boolean isRefreshingSilently) {
+            final int instanceLoadId = activeLoadId.get();
+            if (!isRefreshingSilently) {
+                adapter.setProgressVisible(true);
+            }
+            pageLoader.loadNextPage(new PageLoadCallback<T>() {
                 @Override
                 public void onPageLoaded(List<T> newItems, boolean hasMore) {
                     if (isAbandoned()) {
                         return;
                     }
+                    if (isRefreshingSilently) {
+                        adapter.clear();
+                    }
                     adapter.addAll(newItems);
-                    if (!hasMore) {
+                    hasMoreItems = hasMore;
+                    if (!hasMoreItems) {
                         adapter.setProgressVisible(false);
                     }
-                    hasMoreItems = hasMore;
+                    loading = false;
+                }
+
+                @Override
+                public void onError() {
+                    if (isAbandoned()) {
+                        return;
+                    }
+                    adapter.setProgressVisible(false);
+                    hasMoreItems = false;
                     loading = false;
                 }
 
@@ -135,11 +189,21 @@ public class InfiniteScrollUtils {
 
         @Override
         public void reset() {
-            activeLoadId.incrementAndGet(); // To disregard any in-progress loads
+            initLoading();
             adapter.clear();
+            onLoadMore();
+        }
+
+        @Override
+        public void resetSilently() {
+            initLoading();
+            onLoadMore(true);
+        }
+
+        private void initLoading() {
+            activeLoadId.incrementAndGet(); // To disregard any in-progress loads
             hasMoreItems = true;
             loading = true;
-            loadMore();
         }
     }
 

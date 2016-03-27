@@ -24,14 +24,15 @@ import org.edx.mobile.module.analytics.ISegment;
 import org.edx.mobile.module.notification.NotificationDelegate;
 import org.edx.mobile.module.prefs.PrefManager;
 import org.edx.mobile.module.storage.IStorage;
-import org.edx.mobile.services.EdxCookieManager;
 import org.edx.mobile.util.Config;
 import org.edx.mobile.util.NetworkUtil;
-import org.edx.mobile.util.PropertyUtil;
 import org.edx.mobile.view.Router;
 
 import java.util.Locale;
 
+import javax.inject.Inject;
+
+import de.greenrobot.event.EventBus;
 import io.fabric.sdk.android.Fabric;
 import roboguice.RoboGuice;
 import uk.co.chrisjenx.calligraphy.CalligraphyConfig;
@@ -39,20 +40,23 @@ import uk.co.chrisjenx.calligraphy.CalligraphyConfig;
 /**
  * This class initializes the modules of the app based on the configuration.
  */
-public class MainApplication extends MultiDexApplication {
+public abstract class MainApplication extends MultiDexApplication {
 
     //FIXME - temporary solution
     public static final boolean RETROFIT_ENABLED = false;
 
     protected final Logger logger = new Logger(getClass().getName());
 
-    protected static MainApplication application;
+    public static MainApplication application;
 
     public static final MainApplication instance() {
         return application;
     }
 
-    Injector injector;
+    private Injector injector;
+
+    @Inject
+    protected Config config;
 
     @Override
     public void onCreate() {
@@ -71,11 +75,12 @@ public class MainApplication extends MultiDexApplication {
         injector = RoboGuice.getOrCreateBaseApplicationInjector((Application) this, RoboGuice.DEFAULT_STAGE,
                 (Module) RoboGuice.newDefaultRoboModule(this), (Module) new EdxDefaultModule(this));
 
+        injector.injectMembers(this);
 
-        Config config = injector.getInstance(Config.class);
         // initialize Fabric
         if (config.getFabricConfig().isEnabled() && !BuildConfig.DEBUG) {
             Fabric.with(this, new Crashlytics());
+            EventBus.getDefault().register(new CrashlyticsCrashReportObserver());
         }
 
         // initialize NewRelic with crash reporting disabled
@@ -111,11 +116,6 @@ public class MainApplication extends MultiDexApplication {
         if (needVersionUpgrade) {
             // try repair of download data if app version is updated
             injector.getInstance(IStorage.class).repairDownloadCompletionData();
-
-            //try to clear browser cache.
-            //there is an potential issue related to the 301 redirection.
-            //https://openedx.atlassian.net/browse/MA-794
-            EdxCookieManager.getSharedInstance().clearWebViewCache(this);
         }
 
         // Register Font Awesome module in android-iconify library
@@ -143,7 +143,7 @@ public class MainApplication extends MultiDexApplication {
         boolean needVersionUpgrade = false;
         PrefManager.AppInfoPrefManager pmanager = new PrefManager.AppInfoPrefManager(context);
         Long previousVersion = pmanager.getAppVersionCode();
-        int curVersion = PropertyUtil.getManifestVersionCode(context);
+        final int curVersion = BuildConfig.VERSION_CODE;
         if (previousVersion < curVersion) {
             needVersionUpgrade = true;
             pmanager.setAppVersionCode(curVersion);
@@ -190,6 +190,13 @@ public class MainApplication extends MultiDexApplication {
             }
         }
         pmanager.setNotificationEnabled(true);
+    }
+
+    public static class CrashlyticsCrashReportObserver {
+        @SuppressWarnings("unused")
+        public void onEventMainThread(Logger.CrashReportEvent e) {
+            Crashlytics.logException(e.getError());
+        }
     }
 
     public Injector getInjector() {

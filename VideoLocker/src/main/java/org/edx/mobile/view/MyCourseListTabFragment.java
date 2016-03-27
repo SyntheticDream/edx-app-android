@@ -1,6 +1,5 @@
 package org.edx.mobile.view;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.content.Loader;
 import android.view.LayoutInflater;
@@ -8,17 +7,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.google.inject.Inject;
+
 import org.edx.mobile.R;
 import org.edx.mobile.event.EnrolledInCourseEvent;
 import org.edx.mobile.exception.AuthException;
+import org.edx.mobile.http.Api;
 import org.edx.mobile.loader.AsyncTaskResult;
 import org.edx.mobile.loader.CoursesAsyncLoader;
 import org.edx.mobile.model.api.EnrolledCoursesResponse;
 import org.edx.mobile.module.analytics.ISegment;
-import org.edx.mobile.module.facebook.FacebookSessionUtil;
 import org.edx.mobile.module.prefs.PrefManager;
-import org.edx.mobile.services.FetchCourseFriendsService;
-import org.edx.mobile.services.ServiceManager;
+import org.edx.mobile.user.UserAPI;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +31,9 @@ public class MyCourseListTabFragment extends CourseListTabFragment {
 
     protected TextView noCourseText;
     private boolean refreshOnResume;
+
+    @Inject
+    private UserAPI userAPI;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -51,23 +54,12 @@ public class MyCourseListTabFragment extends CourseListTabFragment {
         return view;
     }
 
-    protected void loadData(boolean forceRefresh, boolean showProgress) {
-        if (forceRefresh) {
-            Intent clearFriends = new Intent(getActivity(), FetchCourseFriendsService.class);
-
-            clearFriends.putExtra(FetchCourseFriendsService.TAG_FORCE_REFRESH, true);
-
-            getActivity().startService(clearFriends);
-        }
-
+    protected void loadData(boolean showProgress) {
         //This Show progress is used to display the progress when a user enrolls in a Course
         if (showProgress && progressBar != null) {
             progressBar.setVisibility(View.VISIBLE);
         }
-
-        Bundle args = new Bundle();
-        args.putString(CoursesAsyncLoader.TAG_COURSE_OAUTH, FacebookSessionUtil.getAccessToken());
-        getLoaderManager().restartLoader(MY_COURSE_LOADER_ID, args, this);
+        getLoaderManager().restartLoader(MY_COURSE_LOADER_ID, null, this);
     }
 
     @Override
@@ -77,15 +69,7 @@ public class MyCourseListTabFragment extends CourseListTabFragment {
 
     @Override
     public Loader<AsyncTaskResult<List<EnrolledCoursesResponse>>> onCreateLoader(int i, Bundle bundle) {
-        return new CoursesAsyncLoader(getActivity(), bundle, environment, environment.getServiceManager()) {
-            @Override
-            protected List<EnrolledCoursesResponse> getCourses(ServiceManager api) throws Exception {
-                List<EnrolledCoursesResponse> response = api.getEnrolledCourses();
-                environment.getNotificationDelegate().syncWithServerForFailure();
-                environment.getNotificationDelegate().checkCourseEnrollment(response);
-                return response;
-            }
-        };
+        return new CoursesAsyncLoader(getActivity(), environment);
     }
 
     @Override
@@ -101,12 +85,16 @@ public class MyCourseListTabFragment extends CourseListTabFragment {
         myCourseList.setVisibility(View.VISIBLE);
 
         if (result.getEx() != null) {
+            logger.error(result.getEx());
             if (result.getEx() instanceof AuthException) {
                 PrefManager prefs = new PrefManager(getActivity(), PrefManager.Pref.LOGIN);
                 prefs.clearAuth();
-
-                logger.error(result.getEx());
                 getActivity().finish();
+            } else if (result.getEx() instanceof Api.HttpAuthRequiredException) {
+                environment.getRouter().forceLogout(
+                        getContext(),
+                        environment.getSegment(),
+                        environment.getNotificationDelegate());
             }
         } else if (result.getResult() != null) {
             invalidateSwipeFunctionality();
@@ -144,7 +132,7 @@ public class MyCourseListTabFragment extends CourseListTabFragment {
     public void onResume() {
         super.onResume();
         if (refreshOnResume) {
-            loadData(false, true);
+            loadData(true);
             refreshOnResume = false;
         }
     }

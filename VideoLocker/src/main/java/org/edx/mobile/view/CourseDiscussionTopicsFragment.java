@@ -17,6 +17,7 @@ import com.joanzapata.iconify.IconDrawable;
 import com.joanzapata.iconify.fonts.FontAwesomeIcons;
 
 import org.edx.mobile.R;
+import org.edx.mobile.base.BaseFragment;
 import org.edx.mobile.discussion.CourseTopics;
 import org.edx.mobile.discussion.DiscussionTopic;
 import org.edx.mobile.discussion.DiscussionTopicDepth;
@@ -28,33 +29,28 @@ import org.edx.mobile.view.adapters.DiscussionTopicsAdapter;
 import java.util.ArrayList;
 import java.util.List;
 
-import roboguice.fragment.RoboFragment;
 import roboguice.inject.InjectExtra;
 import roboguice.inject.InjectView;
 
-public class CourseDiscussionTopicsFragment extends RoboFragment {
+public class CourseDiscussionTopicsFragment extends BaseFragment {
+    private static final Logger logger = new Logger(CourseDiscussionTopicsFragment.class.getName());
 
     @InjectView(R.id.discussion_topics_searchview)
-    SearchView discussionTopicsSearchView;
+    private SearchView discussionTopicsSearchView;
 
     @InjectView(R.id.discussion_topics_listview)
-    ListView discussionTopicsListView;
-
+    private ListView discussionTopicsListView;
 
     @InjectExtra(Router.EXTRA_COURSE_DATA)
     private EnrolledCoursesResponse courseData;
 
+    @Inject
+    private DiscussionTopicsAdapter discussionTopicsAdapter;
 
     @Inject
-    DiscussionTopicsAdapter discussionTopicsAdapter;
+    private Router router;
 
-    @Inject
-    Router router;
-
-    GetTopicListTask getTopicListTask;
-
-    private static final Logger logger = new Logger(CourseDiscussionTopicsFragment.class.getName());
-
+    private GetTopicListTask getTopicListTask;
 
     @Nullable
     @Override
@@ -100,9 +96,8 @@ public class CourseDiscussionTopicsFragment extends RoboFragment {
         discussionTopicsSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                if (query == null || query.trim().length() == 0)
+                if (query == null || query.trim().isEmpty())
                     return false;
-
                 router.showCourseDiscussionPostsForSearchQuery(getActivity(), query, courseData);
                 return true;
             }
@@ -123,12 +118,7 @@ public class CourseDiscussionTopicsFragment extends RoboFragment {
             }
         });
 
-        // TODO: Find a better way to hide the keyboard AND take the focus away from the SearchView
-        discussionTopicsSearchView.requestFocus();
-        discussionTopicsSearchView.clearFocus();
-
         getTopicList();
-
     }
 
     private void getTopicList() {
@@ -138,25 +128,27 @@ public class CourseDiscussionTopicsFragment extends RoboFragment {
         getTopicListTask = new GetTopicListTask(getActivity(), courseData.getCourse().getId()) {
             @Override
             public void onSuccess(CourseTopics courseTopics) {
-                if (courseTopics != null) {
-                    logger.debug("GetTopicListTask success=" + courseTopics);
-                    //  hideProgress();
-                    ArrayList<DiscussionTopic> allTopics = new ArrayList<>();
-                    allTopics.addAll(courseTopics.getCoursewareTopics());
-                    allTopics.addAll(courseTopics.getNonCoursewareTopics());
+                logger.debug("GetTopicListTask success=" + courseTopics);
+                ArrayList<DiscussionTopic> allTopics = new ArrayList<>();
+                allTopics.addAll(courseTopics.getNonCoursewareTopics());
+                allTopics.addAll(courseTopics.getCoursewareTopics());
 
-                    List<DiscussionTopicDepth> allTopicsWithDepth = DiscussionTopicDepth.createFromDiscussionTopics(allTopics);
-                    discussionTopicsAdapter.setItems(allTopicsWithDepth);
-                    discussionTopicsAdapter.notifyDataSetChanged();
-                }
-            }
-
-            @Override
-            public void onException(Exception ex) {
-                logger.error(ex);
-                //  hideProgress();
+                List<DiscussionTopicDepth> allTopicsWithDepth = DiscussionTopicDepth.createFromDiscussionTopics(allTopics);
+                discussionTopicsAdapter.setItems(allTopicsWithDepth);
+                discussionTopicsAdapter.notifyDataSetChanged();
             }
         };
         getTopicListTask.execute();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        discussionTopicsSearchView.post(new Runnable() {
+            @Override
+            public void run() {
+                discussionTopicsSearchView.clearFocus();
+            }
+        });
     }
 }

@@ -248,7 +248,7 @@ public class CourseUnitNavigationActivityTest extends CourseBaseActivityTest {
                 currentUnit.getType() != BlockType.PROBLEM ) {
             fragmentClass = CourseUnitEmptyFragment.class;
         } else if (currentUnit instanceof HtmlBlockModel) {
-            fragmentClass = CourseUnitWebviewFragment.class;
+            fragmentClass = CourseUnitWebViewFragment.class;
         } else {
             fragmentClass = CourseUnitMobileNotSupportedFragment.class;
         }
@@ -307,7 +307,7 @@ public class CourseUnitNavigationActivityTest extends CourseBaseActivityTest {
         View pagerView = activity.findViewById(R.id.pager);
         assertNotNull(pagerView);
         assertThat(pagerView).isInstanceOf(DisableableViewPager.class);
-        assertEquals(!isLandscape, ((DisableableViewPager) pagerView).isPagingEnabled());
+        assertEquals(!isLandscape, ((DisableableViewPager) pagerView).isEnabled());
     }
 
     /**

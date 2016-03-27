@@ -68,10 +68,10 @@ import java.util.Locale;
  * MediaController will hide and
  * show the buttons according to these rules:
  * <ul>
- * <li> The "previous" and "next" buttons are hidden until setPrevNextListeners()
+ * <li> The "previous" and "next" buttons are hidden until setNextPreviousListeners()
  *   has been called
  * <li> The "previous" and "next" buttons are visible but disabled if
- *   setPrevNextListeners() was called with null listeners
+ *   setNextPreviousListeners() was called with null listeners
  * <li> The "rewind" and "fastforward" buttons are shown unless requested
  *   otherwise by using the MediaController(Context, boolean) constructor
  *   with the boolean set to false
@@ -104,7 +104,6 @@ public class PlayerController extends FrameLayout {
     private IconImageButton     mFullscreenButton;
     private IconImageButton     mSettingsButton;
     private ImageButton         mLmsButton;
-    private ImageButton         shareButton;
     private Handler             mHandler = new MessageHandler(this);
     private String              mTitle;
     private String              shareURL;
@@ -114,13 +113,6 @@ public class PlayerController extends FrameLayout {
     private View                mTopBar;
 
     private static final Logger logger = new Logger(PlayerController.class.getName());
-
-    private ShareVideoListener  shareVideoListener;
-
-    public interface ShareVideoListener {
-        public void onVideoShare();
-    }
-
 
     public PlayerController(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -144,6 +136,7 @@ public class PlayerController extends FrameLayout {
 
     @Override
     public void onFinishInflate() {
+        super.onFinishInflate();
         if (mRoot != null)
             initControllerView(mRoot);
     }
@@ -188,10 +181,6 @@ public class PlayerController extends FrameLayout {
     }
 
     private void initControllerView(View v) {
-
-        PrefManager featuresPrefManager = new PrefManager(getContext(), PrefManager.Pref.FEATURES);
-        boolean enableSocialFeatures = featuresPrefManager.getBoolean(PrefManager.Key.ALLOW_SOCIAL_FEATURES, true);
-
         mPauseButton = (IconImageButton) v.findViewById(R.id.pause);
         if (mPauseButton != null) {
             mPauseButton.requestFocus();
@@ -212,7 +201,7 @@ public class PlayerController extends FrameLayout {
             }
         }
 
-        // By default these are hidden. They will be enabled when setPrevNextListeners() is called 
+        // By default these are hidden. They will be enabled when setNextPreviousListeners() is called
         mNextButton = (ImageButton) v.findViewById(R.id.next);
         if (mNextButton != null && !mFromXml && !mListenersSet) {
             mNextButton.setVisibility(View.GONE);
@@ -241,16 +230,6 @@ public class PlayerController extends FrameLayout {
         if (mSettingsButton != null) {
             mSettingsButton.requestFocus();
             mSettingsButton.setOnClickListener(mSettingsListener);
-        }
-
-        shareButton = (ImageButton) v.findViewById(R.id.share_btn);
-        if (shareButton != null) {
-            if (enableSocialFeatures){
-                shareButton.setOnClickListener(socialShareListener);
-                shareButton.setVisibility(View.VISIBLE);
-            } else {
-                shareButton.setVisibility(View.GONE);
-            }
         }
 
         mEndTime = (TextView) v.findViewById(R.id.time);
@@ -508,23 +487,6 @@ public class PlayerController extends FrameLayout {
         }
     };
 
-    public void setShareVideoListener(ShareVideoListener shareVideoListener){
-        this.shareVideoListener = shareVideoListener;
-    }
-
-    private OnClickListener socialShareListener = new OnClickListener() {
-
-        @Override
-        public void onClick(View view) {
-
-            if (shareVideoListener != null) {
-                shareVideoListener.onVideoShare();
-            }
-
-        }
-
-    };
-
     private void updateTitle() {
         mTitleTextView.setText(mTitle);
     }
@@ -775,7 +737,7 @@ public class PlayerController extends FrameLayout {
         }
     }
 
-    public void setPrevNextListeners(View.OnClickListener next, View.OnClickListener prev) {
+    public void setNextPreviousListeners(View.OnClickListener next, View.OnClickListener prev) {
         mNextListener = next;
         mPrevListener = prev;
 
@@ -855,17 +817,6 @@ public class PlayerController extends FrameLayout {
                 logger.error(ex);
             }
         }
-    }
-
-
-    public void setShareEnabled(boolean shareEnabled) {
-
-        PrefManager featuresPrefManager = new PrefManager(getContext(), PrefManager.Pref.FEATURES);
-        boolean enableSocialFeatures = featuresPrefManager.getBoolean(PrefManager.Key.ALLOW_SOCIAL_FEATURES, true);
-        if (shareButton != null) {
-            shareButton.setVisibility(shareEnabled && enableSocialFeatures ? VISIBLE : GONE);
-        }
-
     }
 
     public void setTitle(String title) {

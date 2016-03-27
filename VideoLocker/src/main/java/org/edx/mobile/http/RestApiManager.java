@@ -9,12 +9,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.squareup.okhttp.CacheControl;
-import com.squareup.okhttp.FormEncodingBuilder;
-import com.squareup.okhttp.Interceptor;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
+import com.jakewharton.retrofit.Ok3Client;
 
 import org.edx.mobile.R;
 import org.edx.mobile.core.IEdxEnvironment;
@@ -62,8 +57,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.CacheControl;
+import okhttp3.FormBody;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import retrofit.RestAdapter;
-import retrofit.client.OkClient;
 
 /**
  * DESIGN NOTES -
@@ -92,7 +92,7 @@ public class RestApiManager implements IApi{
         this.context = context;
         this.oauthBasedClient = oauthBasedClient;
         RestAdapter restAdapter = new RestAdapter.Builder()
-            .setClient(new OkClient(oauthBasedClient))
+            .setClient(new Ok3Client(oauthBasedClient))
             .setEndpoint(getBaseUrl())
             .setRequestInterceptor(new OfflineRequestInterceptor(context))
             .build();
@@ -100,7 +100,7 @@ public class RestApiManager implements IApi{
 
         client = OkHttpUtil.getClient(context);
         restAdapter = new RestAdapter.Builder()
-            .setClient(new OkClient(client))
+            .setClient(new Ok3Client(client))
             .setEndpoint(getBaseUrl())
             .build();
         restApi = restAdapter.create(PublicRestApi.class);
@@ -111,10 +111,9 @@ public class RestApiManager implements IApi{
     }
 
     public final OkHttpClient createSpeedTestClient(){
-        OkHttpClient client = OkHttpUtil.getClient(context);
+        OkHttpClient.Builder builder = OkHttpUtil.getClient(context).newBuilder();
         int timeoutMillis = context.getResources().getInteger(R.integer.speed_test_timeout_in_milliseconds);
-        client.setConnectTimeout(timeoutMillis, TimeUnit.MILLISECONDS);
-        return client;
+        return builder.connectTimeout(timeoutMillis, TimeUnit.MILLISECONDS).build();
     }
 
     public  String getBaseUrl() {
@@ -125,24 +124,8 @@ public class RestApiManager implements IApi{
     @Override
     public ResetPasswordResponse resetPassword(String emailId) throws Exception {
         OkHttpClient client = OkHttpUtil.getClient(context);
-        String url = getBaseUrl() + "/login";
-        Request request = new Request.Builder()
-            .url(url)
-            .build();
-        Response response = client.newCall(request).execute();
-       // response.body().close();
-
-        final Bundle headerBundle = new Bundle();
-        OkHttpUtil.setCookieHeaders(response, headerBundle);
-
-        client.interceptors().add(new Interceptor() {
-            @Override
-            public Response intercept(Chain chain) throws IOException {
-                return OkHttpUtil.addHeader(chain, headerBundle);
-            }
-        });
         RestAdapter restAdapter = new RestAdapter.Builder()
-            .setClient(new OkClient(client))
+            .setClient(new Ok3Client(client))
             .setEndpoint(getBaseUrl())
             .build();
         PublicRestApi service = restAdapter.create(PublicRestApi.class);
@@ -161,11 +144,6 @@ public class RestApiManager implements IApi{
         pref.put(PrefManager.Key.SEGMENT_KEY_BACKEND, ISegment.Values.PASSWORD);
 
         return response;
-    }
-
-    @Override
-    public ProfileModel getProfile(String username) throws Exception {
-        return oauthRestApi.getProfile(username);
     }
 
     @Override
@@ -241,23 +219,6 @@ public class RestApiManager implements IApi{
     }
 
     @Override
-    public CourseInfoModel getCourseInfo(String url, boolean preferCache) throws Exception {
-        Bundle p = new Bundle();
-        p.putString("format", "json");
-        String urlWithAppendedParams = OkHttpUtil.toGetUrl(url, p);
-        Request.Builder builder = new Request.Builder().url(urlWithAppendedParams);
-        if (NetworkUtil.isConnected(context) && !preferCache )  {
-            builder.cacheControl(CacheControl.FORCE_NETWORK);
-        }
-        Request request =builder.build();
-
-        Response response = oauthBasedClient.newCall(request).execute();
-        if (!response.isSuccessful()) throw new Exception("Unexpected code " + response);
-
-        return gson.fromJson(response.body().charStream(), CourseInfoModel.class);
-    }
-
-    @Override
     public List<AnnouncementsModel> getAnnouncement(String url, boolean preferCache) throws Exception {
         Bundle p = new Bundle();
         p.putString("format", "json");
@@ -293,106 +254,6 @@ public class RestApiManager implements IApi{
 
             return response.body().string();
         }
-        return null;
-    }
-
-    @Override
-    public List<EnrolledCoursesResponse> getFriendsCourses(String oauthToken) throws Exception {
-        return getFriendsCourses(false, oauthToken);
-    }
-
-    @Override
-    public List<EnrolledCoursesResponse> getFriendsCourses(boolean preferCache, String oauthToken) throws Exception {
-
-        if (!NetworkUtil.isConnected(context)){
-            return oauthRestApi.getFriendsCourses("json", oauthToken);
-        } else if (preferCache) {
-            return oauthRestApi.getFriendsCourses("json", oauthToken);
-        } else {
-            return oauthRestApi.getFriendsCoursesNoCache("json", oauthToken);
-        }
-
-    }
-
-    @Override
-    public List<SocialMember> getFriendsInCourse(String courseId, String oauthToken) throws Exception {
-        return  getFriendsInCourse(false, courseId, oauthToken);
-    }
-
-    @Override
-    public List<SocialMember> getFriendsInCourse(boolean preferCache, String courseId, String oauthToken) throws Exception {
-
-        if (!NetworkUtil.isConnected(context)){
-            return oauthRestApi.getFriendsInCourse(courseId, "json", oauthToken);
-        } else if (preferCache) {
-            return oauthRestApi.getFriendsInCourse(courseId, "json", oauthToken);
-        } else {
-            return oauthRestApi.getFriendsInCourseNoCache(courseId, "json", oauthToken);
-        }
-
-    }
-
-    @Override
-    public boolean inviteFriendsToGroup(long[] toInvite, long groupId, String oauthToken) throws Exception {
-
-        String format = "json";
-        //make a csv of the array
-        StringBuilder csv = new StringBuilder();
-        for (int i = 0; i < toInvite.length; i++) {
-            csv.append(Long.toString(toInvite[i]));
-            if ((i + 1) < toInvite.length) {
-                csv.append(",");
-            }
-        }
-        String member_ids =  csv.toString();
-
-        SuccessResponse response = oauthRestApi.doInviteFriendsToGroup(format, member_ids, oauthToken, groupId + "");
-
-        return response.isSuccess();
-    }
-
-    @Override
-    public long createGroup(String name, String description, boolean privacy, long adminId, String socialToken) throws Exception {
-        String format = "json";
-        String privacyStr = privacy ? "open" : "closed";
-        String adminIdStr = Long.toString(adminId);
-
-        CreateGroupResponse response = oauthRestApi.doCreateGroup(format, name, description, privacyStr, adminIdStr, socialToken);
-        return Long.valueOf(response.getId());
-    }
-
-    @Override
-    public boolean setUserCourseShareConsent(boolean consent) throws Exception {
-        ShareCourseResult result = oauthRestApi.setUserCourseShareConsent("json", Boolean.toString(consent));
-        return result.isSuccess();
-    }
-
-    @Override
-    public boolean getUserCourseShareConsent() throws Exception {
-        SuccessResponse response = oauthRestApi.getUserCourseShareConsent();
-        //FIXME - we need the case insensitive json parser?????
-        return response.isSuccess();
-    }
-
-    @Override
-    public List<SocialMember> getGroupMembers(boolean preferCache, long groupId) throws Exception {
-
-        if (!NetworkUtil.isConnected(context)){
-            return oauthRestApi.getGroupMembers(groupId + "");
-        } else if (preferCache) {
-            return oauthRestApi.getGroupMembers(groupId + "");
-        } else {
-            return oauthRestApi.getGroupMembersNoCache(groupId + "");
-        }
-
-    }
-
-    @Override
-    public AuthResponse socialLogin(String accessToken, SocialFactory.SOCIAL_SOURCE_TYPE socialType) throws Exception {
-        if ( socialType == SocialFactory.SOCIAL_SOURCE_TYPE.TYPE_FACEBOOK )
-            return loginByFacebook( accessToken );
-        if ( socialType == SocialFactory.SOCIAL_SOURCE_TYPE.TYPE_GOOGLE )
-            return loginByGoogle( accessToken );
         return null;
     }
 
@@ -454,7 +315,7 @@ public class RestApiManager implements IApi{
     @Override
     public RegisterResponse register(Bundle parameters) throws Exception {
 
-        FormEncodingBuilder builder = new FormEncodingBuilder();
+        FormBody.Builder builder = new FormBody.Builder();
         for (String key : parameters.keySet()) {
             builder.add(key, parameters.getString(key));
         }
@@ -552,32 +413,12 @@ public class RestApiManager implements IApi{
 
 
     @Override
-    public String getUnitUrlByVideoById(String courseId, String videoId) {
-        return null;
-    }
-
-    @Override
-    public VideoResponseModel getSubsectionById(String courseId, String subsectionId) throws Exception {
-        return null;
-    }
-
-    @Override
     public VideoResponseModel getVideoById(String courseId, String videoId) throws Exception {
         return null;
     }
 
     @Override
-    public LectureModel getLecture(String courseId, String chapterName, String lectureName) throws Exception {
-        return null;
-    }
-
-    @Override
     public Map<String, SectionEntry> getCourseHierarchy(String courseId, boolean preferCache) throws Exception {
-        return null;
-    }
-
-    @Override
-    public Map<String, SectionEntry> getCourseHierarchy(String courseId) throws Exception {
         return null;
     }
 

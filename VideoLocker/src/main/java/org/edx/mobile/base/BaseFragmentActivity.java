@@ -4,10 +4,6 @@ import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
-import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
@@ -25,7 +21,6 @@ import com.google.inject.Inject;
 
 import org.edx.mobile.R;
 import org.edx.mobile.core.IEdxEnvironment;
-import org.edx.mobile.event.FlyingMessageEvent;
 import org.edx.mobile.event.LogoutEvent;
 import org.edx.mobile.event.NetworkConnectivityChangeEvent;
 import org.edx.mobile.interfaces.NetworkObserver;
@@ -37,7 +32,6 @@ import org.edx.mobile.util.NetworkUtil;
 import org.edx.mobile.util.ViewAnimationUtil;
 import org.edx.mobile.view.ICommonUI;
 import org.edx.mobile.view.NavigationFragment;
-import org.edx.mobile.view.dialog.WebViewDialogFragment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,10 +41,6 @@ import de.greenrobot.event.EventBus;
 public abstract class BaseFragmentActivity extends BaseAppActivity
         implements NetworkSubject, ICommonUI {
 
-
-    @VisibleForTesting
-    public static final String WEB_VIEW_DIALOG_TAG = "web-view-dialog";
-
     public static final String ACTION_SHOW_MESSAGE_INFO = "ACTION_SHOW_MESSAGE_INFO";
     public static final String ACTION_SHOW_MESSAGE_ERROR = "ACTION_SHOW_MESSAGE_ERROR";
 
@@ -59,7 +49,6 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
     //FIXME - we should not set a separate flag to indicate the status of UI component
     private boolean isUiOnline = true;
     private boolean isConnectedToWifi = false;
-    private boolean applyPrevTransitionOnRestart = false;
     private boolean isActivityStarted = false;
     @Inject
     protected IEdxEnvironment environment;
@@ -67,28 +56,28 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
 
     private List<NetworkObserver> networkObservers = new ArrayList<NetworkObserver>();
 
-    public void registerNetworkObserver(NetworkObserver observer){
-        if(observer != null && !networkObservers.contains(observer)){
+    public void registerNetworkObserver(NetworkObserver observer) {
+        if (observer != null && !networkObservers.contains(observer)) {
             networkObservers.add(observer);
         }
     }
 
-    public void unregisterNetworkObserver(NetworkObserver observer){
-        if(observer != null && networkObservers.contains(observer)){
+    public void unregisterNetworkObserver(NetworkObserver observer) {
+        if (observer != null && networkObservers.contains(observer)) {
             networkObservers.remove(observer);
         }
     }
 
     @Override
-    public void notifyNetworkDisconnect(){
-        for(NetworkObserver o : networkObservers){
+    public void notifyNetworkDisconnect() {
+        for (NetworkObserver o : networkObservers) {
             o.onOffline();
         }
     }
 
     @Override
-    public void notifyNetworkConnect(){
-        for(NetworkObserver o : networkObservers){
+    public void notifyNetworkConnect() {
+        for (NetworkObserver o : networkObservers) {
             o.onOnline();
         }
     }
@@ -102,7 +91,7 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
 
         updateActionBarShadow();
 
-        logger.debug( "created");
+        logger.debug("created");
     }
 
     @Override
@@ -111,10 +100,6 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
         isActivityStarted = true;
 
         PrefManager pmFeatures = new PrefManager(this, PrefManager.Pref.FEATURES);
-
-        boolean enableSocialFeatures = NetworkUtil.isSocialFeatureFlagEnabled(this, environment.getConfig());
-
-        pmFeatures.put(PrefManager.Key.ALLOW_SOCIAL_FEATURES, enableSocialFeatures);
 
 
         // enabling action bar app icon.
@@ -126,7 +111,7 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
             //If activity is in landscape, hide the Action bar
             if (isLandscape()) {
                 bar.hide();
-            }else{
+            } else {
                 bar.show();
             }
         }
@@ -136,20 +121,20 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
     protected void onResume() {
         super.onResume();
         EventBus.getDefault().registerSticky(this);
-        try{
+        try {
             DrawerLayout mDrawerLayout = (DrawerLayout)
                     findViewById(R.id.drawer_layout);
             if (mDrawerLayout != null) {
 
                 Fragment frag = getSupportFragmentManager()
                         .findFragmentByTag("NavigationFragment");
-                if(frag==null){
+                if (frag == null) {
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.slider_menu,
-                                    new NavigationFragment(),"NavigationFragment").commit();
+                                    new NavigationFragment(), "NavigationFragment").commit();
                 }
             }
-        }catch(Exception ex){
+        } catch (Exception ex) {
             logger.error(ex);
         }
     }
@@ -188,18 +173,6 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
     }
 
     @Override
-    protected void onRestart() {
-        super.onRestart();
-        logger.debug("activity restarted");
-
-        if (applyPrevTransitionOnRestart) {
-            // apply slide transition animation
-            overridePendingTransition(R.anim.slide_in_from_start, R.anim.slide_out_to_end);
-        }
-        applyPrevTransitionOnRestart = false;
-    }
-
-    @Override
     protected void onPause() {
         EventBus.getDefault().unregister(this);
         super.onPause();
@@ -216,7 +189,7 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
             // App crashes on a few devices (mostly 4.0.+) on super method call
             // This is a workaround to avoid app crash, app still works even if Exception occurs
             super.onRestoreInstanceState(savedInstanceState);
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             logger.error(ex);
         }
     }
@@ -230,7 +203,7 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
                             "NavigationFragment").commit();
 
             mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
-                    R.string.label_close, R.string.label_close) {
+                    R.string.label_open_drawer, R.string.label_close_drawer) {
                 public void onDrawerClosed(View view) {
                     super.onDrawerClosed(view);
                     invalidateOptionsMenu();
@@ -253,13 +226,12 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
     }
 
     //Closing the Navigation Drawer
-    public void closeDrawer(){
+    public void closeDrawer() {
         DrawerLayout mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if(mDrawerLayout!=null){
+        if (mDrawerLayout != null) {
             mDrawerLayout.closeDrawers();
         }
     }
-
 
 
     @Override
@@ -276,7 +248,6 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
      * and any these methods should both be overriden together.
      *
      * @param menu The options menu.
-     *
      * @return Return true if the menu should be displayed.
      */
     protected boolean createOptionsMenu(Menu menu) {
@@ -317,24 +288,23 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
      * selections of the menu items that are initialized from that method.
      *
      * @param item The menu item that was selected.
-     *
      * @return boolean Return false to allow normal menu processing to
-     *         proceed, true to consume it here.
+     * proceed, true to consume it here.
      */
     protected boolean handleOptionsItemSelected(MenuItem item) {
         return false;
     }
 
-    public void setActionBarVisible(boolean visible){
+    public void setActionBarVisible(boolean visible) {
         try {
             ActionBar bar = getSupportActionBar();
-            if (bar != null ) {
-                if ( visible )
+            if (bar != null) {
+                if (visible)
                     bar.show();
                 else
                     bar.hide();
             }
-        }catch(Exception ex){
+        } catch (Exception ex) {
             logger.error(ex);
         }
     }
@@ -347,7 +317,7 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
         // Sync the toggle state after onRestoreInstanceState has occurred.
-        if (mDrawerToggle != null ) {
+        if (mDrawerToggle != null) {
             mDrawerToggle.syncState();
         }
     }
@@ -356,12 +326,12 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         // Pass any configuration change to the drawer toggls
-        if (mDrawerToggle != null ) {
+        if (mDrawerToggle != null) {
             mDrawerToggle.onConfigurationChanged(newConfig);
         }
     }
 
-    public void animateLayouts(View view){
+    public void animateLayouts(View view) {
         if (view == null) {
             logger.warn("Null view cannot be animated!");
             return;
@@ -369,8 +339,8 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
         ViewAnimationUtil.showMessageBar(view);
     }
 
-    public void stopAnimation(View view){
-        if(view!=null){
+    public void stopAnimation(View view) {
+        if (view != null) {
             ViewAnimationUtil.stopAnimation(view);
         }
     }
@@ -382,7 +352,7 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
      * @return boolean - Returns true if message shown, false otherwise.
      */
     public boolean showInfoMessage(String message) {
-        TextView infoMessageTv = (TextView) findViewById(R.id.downloadMessage);
+        TextView infoMessageTv = (TextView) findViewById(R.id.flying_message);
         if (infoMessageTv != null) {
             infoMessageTv.setText(message);
             animateLayouts(infoMessageTv);
@@ -400,7 +370,7 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
      * @return <code>true<code/> if the view was hidden successfully otherwise <code>false</code>
      */
     public boolean hideInfoMessage() {
-        View messageView = findViewById(R.id.downloadMessage);
+        View messageView = findViewById(R.id.flying_message);
         if (messageView == null) {
             logger.warn("Message view not available, so couldn't hide flying message");
             return false;
@@ -413,9 +383,9 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
      * Call this method to inform user about going  offline
      */
     public void showOfflineAccessMessage() {
-        try{
+        try {
             animateLayouts(findViewById(R.id.offline_access_panel));
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.error(e);
         }
     }
@@ -432,28 +402,25 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
     }
 
 
-    public void setApplyPrevTransitionOnRestart(
-            boolean applyPrevTransitionOnRestart) {
-        //Set transition when activity restarts
-        this.applyPrevTransitionOnRestart = applyPrevTransitionOnRestart;
+    /**
+     * callback from EventBus
+     *
+     * @param event
+     */
+    public void onEvent(LogoutEvent event) {
+        finish();
     }
 
     /**
      * callback from EventBus
+     *
      * @param event
      */
-    public void onEvent(LogoutEvent event){
-        finish();
-    }
-    /**
-     * callback from EventBus
-     * @param event
-     */
-    public void onEvent(NetworkConnectivityChangeEvent event){
+    public void onEvent(NetworkConnectivityChangeEvent event) {
 
         logger.debug("network state changed");
         if (NetworkUtil.isConnected(this)) {
-            if ( !isUiOnline) {
+            if (!isUiOnline) {
                 // only notify if previous state was NOT same
                 isUiOnline = true;
                 handler.post(new Runnable() {
@@ -465,7 +432,7 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
             }
 
             if (NetworkUtil.isConnectedWifi(this)) {
-                if(!isConnectedToWifi){
+                if (!isConnectedToWifi) {
                     isConnectedToWifi = true;
                     handler.post(new Runnable() {
                         @Override
@@ -475,7 +442,7 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
                     });
                 }
             } else if (NetworkUtil.isConnectedMobile(this)) {
-                if(isConnectedToWifi){
+                if (isConnectedToWifi) {
                     isConnectedToWifi = false;
                     handler.post(new Runnable() {
                         @Override
@@ -515,7 +482,7 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
         if (offlineMenuItem != null) {
             offlineMenuItem.setVisible(true);
         }
-        logger.debug ("You are now offline");
+        logger.debug("You are now offline");
     }
 
     /**
@@ -523,14 +490,16 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
      * Sub-classes may override this method to handle when mobile data is connected.
      * This method is called after {@link #onOnline()} method.
      */
-    protected void onConnectedToMobile() {}
+    protected void onConnectedToMobile() {
+    }
 
     /**
      * Gets called whenever network state is changed and device is now connected to wifi.
      * Sub-classes may override this method to handle when wifi is connected.
      * This method is called after {@link #onOnline()} method.
      */
-    protected void onConnectedToWifi() {}
+    protected void onConnectedToWifi() {
+    }
 
     /**
      * Returns user's profile.
@@ -555,18 +524,6 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
      */
     protected void unblockTouch() {
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-    }
-
-    /**
-     * Displays a dialog which has a WebView container to display contents of given URL.
-     */
-    public void showWebDialog(@NonNull String url, @Nullable String dialogTitle) {
-        //Show the dialog only if the activity is started. This is to avoid Illegal state
-        //exceptions if the dialog fragment tries to show even if the application is not in foreground
-        if(isActivityStarted()){
-            WebViewDialogFragment.newInstance(url, dialogTitle)
-                    .show(getSupportFragmentManager(), WEB_VIEW_DIALOG_TAG);
-        }
     }
 
     protected void hideSoftKeypad() {
@@ -609,58 +566,8 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
         return true;
     }
 
-    /**
-     * This method should be implemented by {@link org.edx.mobile.view.MyCoursesListActivity}.
-     */
-    protected void reloadMyCoursesData() {
-        // nothing to do here
-    }
-
-    /**
-     * callback from eventbus
-     * Receives the sticky broadcast message and attempts showing flying message.
-     **/
-    public void onEvent(FlyingMessageEvent event){
-        try {
-            if (event.type == FlyingMessageEvent.MessageType.INFO) {
-                String message = event.message;
-                if (showInfoMessage(message)) {
-                    // make this message one-shot
-                    EventBus.getDefault().removeStickyEvent(event);
-                } else {
-                    // may be some other screen will display this message
-                    // do nothing here, do NOT remove broadcast
-                }
-
-                if (message.equalsIgnoreCase(getString(R.string.you_are_now_enrolled))) {
-                    handler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            reloadMyCoursesData();
-                        }
-                    });
-                }
-            }
-
-            else if (event.type == FlyingMessageEvent.MessageType.ERROR) {
-                String header = event.title;
-                String message = event.message;
-                if (showErrorMessage(header, message)) {
-                    // make this message one-shot
-                    EventBus.getDefault().removeStickyEvent(event);
-                } else {
-                    // may be some other screen will display this message
-                    // do nothing here, do NOT remove broadcast
-                }
-            }
-        } catch(Exception ex) {
-            logger.error(ex);
-        }
-    }
-
-
     @Override
-    public boolean tryToSetUIInteraction(boolean enable){
+    public boolean tryToSetUIInteraction(boolean enable) {
         return false;
     }
 

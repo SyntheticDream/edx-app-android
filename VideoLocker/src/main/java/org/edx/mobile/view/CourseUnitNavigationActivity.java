@@ -25,7 +25,6 @@ import org.edx.mobile.model.course.VideoBlockModel;
 import org.edx.mobile.module.analytics.ISegment;
 import org.edx.mobile.module.prefs.PrefManager;
 import org.edx.mobile.services.ViewPagerDownloadManager;
-import org.edx.mobile.util.NetworkUtil;
 import org.edx.mobile.view.common.PageViewStateCallback;
 import org.edx.mobile.view.custom.DisableableViewPager;
 
@@ -127,7 +126,6 @@ public class CourseUnitNavigationActivity extends CourseBaseActivity implements 
         });
 
         updateUIForOrientation();
-        setApplyPrevTransitionOnRestart(true);
     }
 
     @Override
@@ -265,11 +263,11 @@ public class CourseUnitNavigationActivity extends CourseBaseActivity implements 
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
             setActionBarVisible(false);
             findViewById(R.id.course_unit_nav_bar).setVisibility(View.GONE);
-            pager.setPagingEnabled(false);
+            pager.setEnabled(false);
         } else {
             setActionBarVisible(true);
             findViewById(R.id.course_unit_nav_bar).setVisibility(View.VISIBLE);
-            pager.setPagingEnabled(true);
+            pager.setEnabled(true);
         }
     }
 
@@ -291,8 +289,12 @@ public class CourseUnitNavigationActivity extends CourseBaseActivity implements 
             CourseComponent unit = getUnit(pos);
             CourseUnitFragment unitFragment;
             //FIXME - for the video, let's ignore studentViewMultiDevice for now
-            if (unit instanceof VideoBlockModel) {
-                unitFragment = CourseUnitVideoFragment.newInstance((VideoBlockModel) unit);
+            if (unit instanceof VideoBlockModel &&
+                    ((VideoBlockModel) unit).getData().encodedVideos.getPreferredVideoInfo() != null) {
+                    unitFragment = CourseUnitVideoFragment.newInstance((VideoBlockModel) unit);
+            } else if (unit instanceof VideoBlockModel &&
+                    ((VideoBlockModel) unit).getData().encodedVideos.getYoutubeVideoInfo() != null) {
+                    unitFragment = CourseUnitOnlyOnYoutubeFragment.newInstance(unit);
             } else if (!unit.isMultiDevice()) {
                 unitFragment = CourseUnitMobileNotSupportedFragment.newInstance(unit);
             } else if (unit.getType() != BlockType.VIDEO &&
@@ -302,7 +304,7 @@ public class CourseUnitNavigationActivity extends CourseBaseActivity implements 
                     unit.getType() != BlockType.PROBLEM) {
                 unitFragment = CourseUnitEmptyFragment.newInstance(unit);
             } else if (unit instanceof HtmlBlockModel) {
-                unitFragment = CourseUnitWebviewFragment.newInstance((HtmlBlockModel) unit);
+                unitFragment = CourseUnitWebViewFragment.newInstance((HtmlBlockModel) unit);
             }
             //fallback
             else {

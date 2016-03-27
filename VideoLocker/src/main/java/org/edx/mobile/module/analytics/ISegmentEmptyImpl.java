@@ -8,6 +8,8 @@ import com.segment.analytics.Traits;
 
 import org.edx.mobile.util.images.ShareUtils;
 
+import java.util.Map;
+
 /**
  * Created by rohan on 2/8/15.
  *
@@ -64,12 +66,20 @@ public class ISegmentEmptyImpl implements ISegment {
     }
 
     @Override
-    public Properties trackScreenView(String screenName) {
+    public Properties trackScreenView(@NonNull String screenName) {
         return null;
     }
 
     @Override
-    public Properties trackScreenView(String screenName, String courseId, String value) {
+    public Properties trackScreenView(@NonNull String screenName, @Nullable String courseId,
+                                      @Nullable String action) {
+        return null;
+    }
+
+    @Override
+    public Properties trackScreenView(@NonNull String screenName, @Nullable String courseId,
+                                      @Nullable String action,
+                                      @Nullable Map<String, String> values) {
         return null;
     }
 
@@ -153,37 +163,7 @@ public class ISegmentEmptyImpl implements ISegment {
     }
 
     @Override
-    public Properties trackUserCellConnection(String carrierName, boolean isZeroRated) {
-        return null;
-    }
-
-    @Override
     public Properties trackUserConnectionSpeed(String connectionType, float connectionSpeed) {
-        return null;
-    }
-
-    @Override
-    public Properties courseGroupAccessed(String courseId) {
-        return null;
-    }
-
-    @Override
-    public Properties gameGroupAccessed(long groupID, int groupUserCount) {
-        return null;
-    }
-
-    @Override
-    public Properties groupCreated(long groupID, int invitedUserCount) {
-        return null;
-    }
-
-    @Override
-    public Properties groupInvited(long groupID, int invitedUserCount) {
-        return null;
-    }
-
-    @Override
-    public Properties courseShared(String courseId, String socialNetwork) {
         return null;
     }
 
@@ -194,16 +174,6 @@ public class ISegmentEmptyImpl implements ISegment {
 
     @Override
     public Properties certificateShared(@NonNull String courseId, @NonNull String certificateUrl, @NonNull ShareUtils.ShareType shareType) {
-        return null;
-    }
-
-    @Override
-    public Properties socialConnectionEvent(boolean connected, String socialNetwork) {
-        return null;
-    }
-
-    @Override
-    public Properties coursesVisibleToFriendsChange(boolean visible) {
         return null;
     }
 

@@ -76,8 +76,9 @@
     <dimen name="video_player_top_control_height">20dp</dimen>
     <dimen name="video_player_bottom_control_width">25dp</dimen>
     <dimen name="video_player_bottom_control_height">25dp</dimen>
-    <dimen name="video_player_side_control_width">30dp</dimen>
-    <dimen name="video_player_side_control_height">30dp</dimen>
+    <dimen name="video_player_side_control_width">40dp</dimen>
+    <dimen name="video_player_side_control_height">40dp</dimen>
+    <dimen name="video_player_side_control_padding">5dp</dimen>
     <dimen name="video_player_control_left_margin">10dp</dimen>
     <dimen name="video_player_control_right_margin">10dp</dimen>
     <dimen name="video_player_bottom_control_left_margin">4dp</dimen>
@@ -118,10 +119,13 @@
     <dimen name="edx_box_radius">5dp</dimen>
     <dimen name="edx_margin">15dp</dimen>
     <dimen name="edx_double_margin">30dp</dimen>
+    <dimen name="edx_quadruple_margin">60dp</dimen>
     <dimen name="widget_margin">10dp</dimen>
     <dimen name="horizontal_input_padding">@dimen/widget_margin</dimen>
     <dimen name="vertical_input_padding">8dp</dimen>
     <dimen name="edx_button_height">40dp</dimen>
+    <dimen name="tab_indicator_unselected_height">1.5dp</dimen>
+    <dimen name="tab_indicator_selected_height">6dp</dimen>
     <dimen name="create_new_item_icon_margin">3dp</dimen>
     <dimen name="button_horizontal_padding">22dp</dimen>
     <dimen name="x_small_icon_margin">5dp</dimen>

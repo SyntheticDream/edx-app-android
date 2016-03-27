@@ -32,14 +32,12 @@ public interface IApi {
             throws Exception;
 
     AuthResponse auth(String username, String password)
-                    throws Exception;
-
-    ProfileModel getProfile(String username) throws Exception;
+            throws Exception;
 
     ProfileModel getProfile() throws Exception;
 
     List<EnrolledCoursesResponse> getEnrolledCourses()
-                                                            throws Exception;
+            throws Exception;
 
     EnrolledCoursesResponse getCourseById(String courseId);
 
@@ -47,36 +45,12 @@ public interface IApi {
 
     HandoutModel getHandout(String url, boolean fetchFromCache) throws Exception;
 
-    CourseInfoModel getCourseInfo(String url, boolean preferCache) throws Exception;
-
     List<AnnouncementsModel> getAnnouncement(String url, boolean preferCache)
             throws Exception;
 
 
     String downloadTranscript(String url)
-                    throws Exception;
-
-    List<EnrolledCoursesResponse> getFriendsCourses(String oauthToken) throws Exception;
-
-    List<EnrolledCoursesResponse> getFriendsCourses(boolean preferCache, String oauthToken) throws Exception;
-
-    List<SocialMember> getFriendsInCourse(String courseId, String oauthToken) throws Exception;
-
-    List<SocialMember> getFriendsInCourse(boolean preferCache, String courseId, String oauthToken) throws Exception;
-
-    boolean inviteFriendsToGroup(long[] toInvite, long groupId, String oauthToken) throws Exception;
-
-    long createGroup(String name, String description, boolean privacy, long adminId, String socialToken) throws Exception;
-
-    boolean setUserCourseShareConsent(boolean consent) throws Exception;
-
-    boolean getUserCourseShareConsent() throws Exception;
-
-    List<SocialMember> getGroupMembers(boolean preferCache, long groupId) throws Exception;
-
-
-    AuthResponse socialLogin(String accessToken, SocialFactory.SOCIAL_SOURCE_TYPE socialType)
-                    throws Exception;
+            throws Exception;
 
     AuthResponse loginByFacebook(String accessToken) throws Exception;
 
@@ -88,7 +62,7 @@ public interface IApi {
     SyncLastAccessedSubsectionResponse getLastAccessedSubsection(String courseId) throws Exception;
 
     RegisterResponse register(Bundle parameters)
-                                    throws Exception;
+            throws Exception;
 
     RegistrationDescription getRegistrationDescription() throws Exception;
 
@@ -97,25 +71,15 @@ public interface IApi {
     List<HttpCookie> getSessionExchangeCookie() throws Exception;
 
     @Deprecated
-    String getUnitUrlByVideoById(String courseId, String videoId);
-    @Deprecated
-    VideoResponseModel getSubsectionById(String courseId, String subsectionId)
-        throws Exception;
-    @Deprecated
     VideoResponseModel getVideoById(String courseId, String videoId)
         throws Exception;
+
     @Deprecated
-    LectureModel getLecture(String courseId, String chapterName, String lectureName)
-        throws Exception;
-    @Deprecated
-    Map<String, SectionEntry> getCourseHierarchy(String courseId, boolean preferCache)
-        throws Exception;
-    @Deprecated
-    Map<String, SectionEntry> getCourseHierarchy(String courseId)
-        throws Exception;
+    Map<String, SectionEntry> getCourseHierarchy(String courseId, boolean preferCache) throws Exception;
+
     @Deprecated
     ArrayList<SectionItemInterface> getLiveOrganizedVideosByChapter
-        (String courseId, String chapter);
+            (String courseId, String chapter);
 
-    public HttpManager.HttpResult getCourseStructure(HttpRequestDelegate delegate) throws Exception;
+    HttpManager.HttpResult getCourseStructure(HttpRequestDelegate delegate) throws Exception;
 }

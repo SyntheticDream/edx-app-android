@@ -8,6 +8,8 @@ import com.segment.analytics.Traits;
 
 import org.edx.mobile.util.images.ShareUtils;
 
+import java.util.Map;
+
 public interface ISegment {
 
     /*
@@ -50,9 +52,13 @@ public interface ISegment {
 
     /* Events not mentioned in PDF */
 
-    Properties trackScreenView(String screenName);
+    Properties trackScreenView(@NonNull String screenName);
 
-    Properties trackScreenView(String screenName, String courseId, String value);
+    Properties trackScreenView(@NonNull String screenName, @Nullable String courseId,
+            @Nullable String value);
+
+    Properties trackScreenView(@NonNull String screenName, @Nullable String courseId,
+            @Nullable String value, @Nullable Map<String, String> values);
 
     Properties trackDownloadComplete(String videoId, String courseId,
             String unitUrl);
@@ -66,7 +72,7 @@ public interface ISegment {
             String subSection, String enrollmentId, long videoCount);
 
     Properties trackUserLogin(String method);
-    
+
     Properties trackUserLogout();
 
     Properties trackTranscriptLanguage(String videoId, Double currentTime,
@@ -77,9 +83,9 @@ public interface ISegment {
 
     Properties trackVideoOrientation(String videoId, Double currentTime,
             boolean isLandscape, String courseId, String unitUrl);
-    
+
     Properties trackUserSignUpForAccount();
-    
+
     Properties trackUserFindsCourses();
 
     Properties trackCreateAccountClicked(String appVersion, String source);
@@ -98,28 +104,12 @@ public interface ISegment {
      * @param tracker
      */
     void setTracker(ISegmentTracker tracker);
-    
-    Properties trackUserCellConnection(String carrierName, boolean isZeroRated);
 
     Properties trackUserConnectionSpeed(String connectionType, float connectionSpeed);
-
-    Properties courseGroupAccessed(String courseId);
-
-    Properties gameGroupAccessed(long groupID, int groupUserCount);
-
-    Properties groupCreated(long groupID, int invitedUserCount);
-
-    Properties groupInvited(long groupID, int invitedUserCount);
-
-    Properties courseShared(String courseId, String socialNetwork);
 
     Properties certificateShared(@NonNull String courseId, @NonNull String certificateUrl, @NonNull ShareUtils.ShareType shareType);
 
     Properties courseDetailShared(@NonNull String courseId, @NonNull String aboutUrl, @NonNull ShareUtils.ShareType shareType);
-
-    Properties socialConnectionEvent(boolean connected, String socialNetwork);
-
-    Properties coursesVisibleToFriendsChange(boolean visible);
 
     Properties trackCourseOutlineMode(boolean isVideoMode);
 
@@ -169,16 +159,14 @@ public interface ISegment {
         String CONNECTION_TYPE = "connection_type";
         String CONNECTION_SPEED = "connection_speed";
 
-        String GROUP_ID = "group_id";
-        String GROUP_USER_COUNT = "group_user_count";
-        String GROUP_INVITED_USER_COUNT = "group_invited_count";
-        String SOCIAL_NETWORK = "social_network";
         String TYPE = "type";
-        String SOCIAL_CONNECTION_STATE = "social_connection_state";
-        String SETTING_COURSES_VISIBLE_STATE = "settings_courses_visible_state";
         String CATEGORY = "category";
         String LABEL = "label";
         String ACTION = "action";
+        String SEARCH_STRING = "search_string";
+        String TOPIC_ID = "topic_id";
+        String THREAD_ID = "thread_id";
+        String RESPONSE_ID = "response_id";
 
         String COMPONENT_VIEWED = "Component Viewed";
     }
@@ -228,15 +216,8 @@ public interface ISegment {
         String NOTIFICATION_RECEIVED = "edx.bi.app.notification.course.update.received";
         String NOTIFICATION_TAPPED = "edx.bi.app.notification.course.update.tapped";
 
-        String ACCESS_COURSE_GROUP = "edx.bi.app.groups.course_access";
-        String ACCESS_GAME_GROUP = "edx.bi.app.groups.game_access";
-        String CREATE_GAME_GROUP = "edx.bi.app.groups.game_create";
-        String INVITE_GAME_GROUP = "edx.bi.app.groups.game_invite";
-        String SOCIAL_COURSE_SHARED = "edx.bi.app.social.course_share";
         String SOCIAL_CERTIFICATE_SHARED = "edx.bi.app.certificate.shared";
         String SOCIAL_COURSE_DETAIL_SHARED = "edx.bi.app.course.shared";
-        String SOCIAL_CONNECTION_CHANGE = "edx.bi.app.social.connection";
-        String SETTING_COURSES_VISIBLE_CHANGE = "edx.bi.app.user.share_courses";
 
         String NAVIGATION = "navigation";
         String SOCIAL_SHARING = "social-sharing";
@@ -259,6 +240,8 @@ public interface ISegment {
 
         String WIFI = "wifi";
         String CELL_DATA = "cell_data";
+        String POSTS_ALL = "all_posts";
+        String POSTS_FOLLOWING = "posts_following";
     }
 
     interface Screens {
@@ -269,19 +252,23 @@ public interface ISegment {
         String SECTION_OUTLINE = "Section Outline";
         String UNIT_DETAIL = "Unit Detail";
         String CERTIFICATE = "Certificate";
-        String CREATE_GAME_GROUPS = "Create Games Group";
         String DOWNLOADS = "Downloads";
         String FIND_COURSES = "Find Courses";
-        String FRIENDS_IN_COURSE = "Friends In This Course";
-        String GROUP_LIST = "Group List";
         String LOGIN = "Login";
         String MY_VIDEOS = "My Videos";
         String MY_VIDEOS_ALL = "My Videos - All Videos";
         String MY_VIDEOS_RECENT = "My Videos - Recent Videos";
         String MY_COURSES = "My Courses";
-        String MY_FRIENDS_COURSES = "My Friends' Courses";
         String SETTINGS = "Settings";
-        String SOCIAL_FRIEND_PICKER = "Social Friend Picker";
+
+        String FORUM_VIEW_TOPICS = "Forum: View Topics";
+        String FORUM_SEARCH_THREADS = "Forum: Search Threads";
+        String FORUM_VIEW_TOPIC_THREADS = "Forum: View Topic Threads";
+        String FORUM_CREATE_TOPIC_THREAD = "Forum: Create Topic Thread";
+        String FORUM_VIEW_THREAD = "Forum: View Thread";
+        String FORUM_ADD_RESPONSE = "Forum: Add Thread Response";
+        String FORUM_VIEW_RESPONSE_COMMENTS = "Forum: View Response Comments";
+        String FORUM_ADD_RESPONSE_COMMENT = "Forum: Add Response Comment";
     }
 
     interface Events {
@@ -305,17 +292,9 @@ public interface ISegment {
         String FIND_COURSES = "Find Courses Clicked";
         String CREATE_ACCOUNT_CLICKED = "Create Account Clicked";
         String ENROLL_COURSES = "Enroll Course Clicked";
-        String TRACK_CELL_CONNECTION = "Cell Connection Established";
         String SPEED = "Connected Speed Report";
-        String COURSE_GROUP_ACCESSED = "Course Group Accessed";
-        String GAME_GROUP_ACCESSED = "Game Group Accessed";
-        String GAME_GROUP_CREATE = "Game Group Created";
-        String GAME_GROUP_INVITE = "Game Group Invited";
-        String SOCIAL_COURSE_SHARED = "Social Course Shared";
         String SOCIAL_CERTIFICATE_SHARED = "Shared a certificate";
         String SOCIAL_COURSE_DETAIL_SHARED = "Shared a course";
-        String SOCIAL_CONNECTION_CHANGE = "Social Connection Change";
-        String SETTING_COURSES_VISIBLE_CHANGE = "Settings Courses Visibility Change";
         String SWITCH_OUTLINE_MODE = "Switch outline mode";
         String COMPONENT_VIEWED = "Component Viewed";
         String OPEN_IN_BROWSER = "Browser Launched";

@@ -17,10 +17,10 @@ import org.edx.mobile.util.images.ShareUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Map;
 
 @Singleton
 public class ISegmentImpl implements ISegment {
-
     @Inject
     private ISegmentTracker tracker;
 
@@ -30,12 +30,13 @@ public class ISegmentImpl implements ISegment {
     }
 
     class SegmentAnalyticsEvent {
+        public Properties properties;
+        public Properties data;
+
         public SegmentAnalyticsEvent() {
             this.properties = new Properties();
             this.data = new Properties();
-            if (this.data != null) {
-                this.properties.putValue(Keys.DATA, this.data);
-            }
+            this.properties.putValue(Keys.DATA, this.data);
 
             setCustomProperties();
         }
@@ -67,9 +68,6 @@ public class ISegmentImpl implements ISegment {
             this.properties.putValue(Keys.NAVIGATION_MODE,
                     (isVideoMode ? Values.OUTLINE_MODE_VIDEO : Values.OUTLINE_MODE_FULL));
         }
-
-        public Properties properties;
-        public Properties data;
     }
 
     /**
@@ -87,6 +85,66 @@ public class ISegmentImpl implements ISegment {
         traits.putUsername(username);
         tracker.identify(userID, traits, new Options());
         return traits;
+    }
+
+    /**
+     * This function is used to send the screen tracking event.
+     *
+     * @param screenName The screen name to track
+     * @return A {@link Properties} object populated with analytics-event info
+     */
+    @Override
+    public Properties trackScreenView(@NonNull String screenName) {
+        return trackScreenView(screenName, null, null);
+    }
+
+    /**
+     * This function is used to send the screen tracking event, with an extra event for
+     * sending course id.
+     *
+     * @param screenName The screen name to track
+     * @param courseId   course id of the course we are viewing
+     * @param action     any custom action we need to send with event
+     * @return A {@link Properties} object populated with analytics-event info
+     */
+    @Override
+    public Properties trackScreenView(@NonNull String screenName, @Nullable String courseId,
+                                      @Nullable String action) {
+        return trackScreenView(screenName, courseId, action, null);
+    }
+
+    /**
+     * This function is used to send the screen tracking event, with an extra event for
+     * sending course id.
+     *
+     * @param screenName The screen name to track
+     * @param courseId   course id of the course we are viewing
+     * @param action     any custom action we need to send with event
+     * @param values     any custom key-value pairs we need to send with event
+     * @return A {@link Properties} object populated with analytics-event info
+     */
+    @Override
+    public Properties trackScreenView(@NonNull String screenName, @Nullable String courseId,
+                                      @Nullable String action,
+                                      @Nullable Map<String, String> values) {
+        // Sending screen view
+        SegmentAnalyticsEvent aEvent = new SegmentAnalyticsEvent();
+        aEvent.setAppNameContext();
+        if (!TextUtils.isEmpty(action)) {
+            aEvent.properties.put(Keys.ACTION, action);
+        }
+        if (!TextUtils.isEmpty(courseId)) {
+            aEvent.properties.put(Keys.COURSE_ID, courseId);
+        }
+        if (values != null) {
+            aEvent.data.putAll(values);
+        }
+        tracker.screen("", screenName, aEvent.properties);
+
+        // Sending screen event
+        addCategoryToBiEvents(aEvent.properties, Values.SCREEN, screenName);
+        tracker.track(screenName, aEvent.properties);
+        return aEvent.properties;
     }
 
 
@@ -478,45 +536,6 @@ public class ISegmentImpl implements ISegment {
     }
 
     /**
-     * This function is used to send the screen tracking event.
-     *
-     * @param screenName The screen name to track
-     * @return A {@link Properties} object populated with analytics-event info
-     */
-    @Override
-    public Properties trackScreenView(String screenName) {
-        return trackScreenView(screenName, null, null);
-    }
-
-    /**
-     * This function is used to send the screen tracking event, with an extra event for
-     * sending course id.
-     *
-     * @param screenName The screen name to track
-     * @param courseId   course id of the course we are viewing
-     * @param action     any custom action we need to send with event
-     * @return A {@link Properties} object populated with analytics-event info
-     */
-    @Override
-    public Properties trackScreenView(String screenName, String courseId, String action) {
-        // Sending screen view
-        SegmentAnalyticsEvent aEvent = new SegmentAnalyticsEvent();
-        aEvent.setAppNameContext();
-        if (!TextUtils.isEmpty(action)) {
-            aEvent.properties.put(Keys.ACTION, action);
-        }
-        if (!TextUtils.isEmpty(courseId)) {
-            aEvent.properties.put(Keys.COURSE_ID, courseId);
-        }
-        tracker.screen("", screenName, aEvent.properties);
-
-        // Sending screen event
-        addCategoryToBiEvents(aEvent.properties, Values.SCREEN, screenName);
-        tracker.track(screenName, aEvent.properties);
-        return aEvent.properties;
-    }
-
-    /**
      * This function is used to track Open in Browser
      *
      * @param url
@@ -626,20 +645,6 @@ public class ISegmentImpl implements ISegment {
 
     //Tracking methods introduced by BNOTIONS
 
-    //We may want to explore the idea of adding cell carrier to the context.
-    @Override
-    public Properties trackUserCellConnection(String carrierName, boolean isZeroRated) {
-        SegmentAnalyticsEvent aEvent = new SegmentAnalyticsEvent();
-        aEvent.properties.putValue(Keys.NAME, Values.CONNECTION_CELL);
-        aEvent.data.putValue(Keys.CELL_CARRIER, carrierName);
-        aEvent.data.putValue(Keys.CELL_ZERO_RATED, isZeroRated);
-
-        aEvent.setAppNameContext();
-        tracker.track(Events.TRACK_CELL_CONNECTION, aEvent.properties);
-        return aEvent.properties;
-
-    }
-
     @Override
     public Properties trackUserConnectionSpeed(String connectionType, float connectionSpeed) {
         SegmentAnalyticsEvent aEvent = new SegmentAnalyticsEvent();
@@ -677,73 +682,6 @@ public class ISegmentImpl implements ISegment {
     }
 
     @Override
-    public Properties courseGroupAccessed(String courseName) {
-        SegmentAnalyticsEvent aEvent = new SegmentAnalyticsEvent();
-        aEvent.properties.putValue(Keys.NAME, Values.ACCESS_COURSE_GROUP);
-
-        aEvent.data.putValue(Keys.COURSE_ID, courseName);
-
-        aEvent.setAppNameContext();
-        tracker.track(Events.COURSE_GROUP_ACCESSED, aEvent.properties);
-        return aEvent.properties;
-
-    }
-
-    @Override
-    public Properties gameGroupAccessed(long groupID, int groupUserCount) {
-        SegmentAnalyticsEvent aEvent = new SegmentAnalyticsEvent();
-        aEvent.properties.putValue(Keys.NAME, Values.ACCESS_GAME_GROUP);
-
-        aEvent.data.putValue(Keys.GROUP_ID, groupID);
-        aEvent.data.putValue(Keys.GROUP_USER_COUNT, groupUserCount);
-
-        aEvent.setAppNameContext();
-        tracker.track(Events.GAME_GROUP_ACCESSED, aEvent.properties);
-        return aEvent.properties;
-
-    }
-
-    @Override
-    public Properties groupCreated(long groupID, int invitedUserCount) {
-        SegmentAnalyticsEvent aEvent = new SegmentAnalyticsEvent();
-        aEvent.properties.putValue(Keys.NAME, Values.CREATE_GAME_GROUP);
-
-        aEvent.data.putValue(Keys.GROUP_ID, groupID);
-        aEvent.data.putValue(Keys.GROUP_INVITED_USER_COUNT, invitedUserCount);
-
-        aEvent.setAppNameContext();
-        tracker.track(Events.GAME_GROUP_CREATE, aEvent.properties);
-        return aEvent.properties;
-
-    }
-
-    @Override
-    public Properties groupInvited(long groupID, int invitedUserCount) {
-        SegmentAnalyticsEvent aEvent = new SegmentAnalyticsEvent();
-        aEvent.properties.putValue(Keys.NAME, Values.INVITE_GAME_GROUP);
-
-        aEvent.data.putValue(Keys.GROUP_ID, groupID);
-        aEvent.data.putValue(Keys.GROUP_INVITED_USER_COUNT, invitedUserCount);
-
-        aEvent.setAppNameContext();
-        tracker.track(Events.GAME_GROUP_INVITE, aEvent.properties);
-        return aEvent.properties;
-    }
-
-    @Override
-    public Properties courseShared(String courseName, String socialNetwork) {
-        SegmentAnalyticsEvent aEvent = new SegmentAnalyticsEvent();
-        aEvent.properties.putValue(Keys.NAME, Values.SOCIAL_COURSE_SHARED);
-
-        aEvent.data.putValue(Keys.COURSE_ID, courseName);
-        aEvent.data.putValue(Keys.SOCIAL_NETWORK, socialNetwork);
-
-        aEvent.setAppNameContext();
-        tracker.track(Events.SOCIAL_COURSE_SHARED, aEvent.properties);
-        return aEvent.properties;
-    }
-
-    @Override
     public Properties courseDetailShared(String courseId, String aboutUrl, ShareUtils.ShareType shareType) {
         SegmentAnalyticsEvent aEvent = new SegmentAnalyticsEvent();
         aEvent.properties.putValue(Keys.NAME, Values.SOCIAL_COURSE_DETAIL_SHARED);
@@ -767,32 +705,6 @@ public class ISegmentImpl implements ISegment {
         aEvent.data.putValue(Keys.TYPE, getShareTypeValue(shareType));
         aEvent.setAppNameContext();
         tracker.track(Events.SOCIAL_CERTIFICATE_SHARED, aEvent.properties);
-        return aEvent.properties;
-    }
-
-    @Override
-    public Properties socialConnectionEvent(boolean connected, String socialNetwork) {
-        SegmentAnalyticsEvent aEvent = new SegmentAnalyticsEvent();
-        aEvent.properties.putValue(Keys.NAME, Values.SOCIAL_CONNECTION_CHANGE);
-
-        aEvent.data.putValue(Keys.SOCIAL_CONNECTION_STATE, connected);
-        aEvent.data.putValue(Keys.SOCIAL_NETWORK, socialNetwork);
-
-        aEvent.setAppNameContext();
-        tracker.track(Events.SOCIAL_CONNECTION_CHANGE, aEvent.properties);
-        return aEvent.properties;
-
-    }
-
-    @Override
-    public Properties coursesVisibleToFriendsChange(boolean visible) {
-        SegmentAnalyticsEvent aEvent = new SegmentAnalyticsEvent();
-        aEvent.properties.putValue(Keys.NAME, Values.SETTING_COURSES_VISIBLE_CHANGE);
-
-        aEvent.data.putValue(Keys.SETTING_COURSES_VISIBLE_STATE, visible);
-
-        aEvent.setAppNameContext();
-        tracker.track(Events.SETTING_COURSES_VISIBLE_CHANGE, aEvent.properties);
         return aEvent.properties;
     }
 

@@ -1,5 +1,6 @@
 package org.edx.mobile.view;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.StringRes;
 import android.support.v4.view.ViewCompat;
@@ -18,6 +19,7 @@ import android.widget.TextView;
 import com.google.inject.Inject;
 
 import org.edx.mobile.R;
+import org.edx.mobile.base.BaseFragment;
 import org.edx.mobile.discussion.CourseTopics;
 import org.edx.mobile.discussion.DiscussionThread;
 import org.edx.mobile.discussion.DiscussionThreadPostedEvent;
@@ -29,16 +31,18 @@ import org.edx.mobile.model.api.EnrolledCoursesResponse;
 import org.edx.mobile.module.analytics.ISegment;
 import org.edx.mobile.task.CreateThreadTask;
 import org.edx.mobile.task.GetTopicListTask;
+import org.edx.mobile.util.SoftKeyboardUtil;
 import org.edx.mobile.view.adapters.TopicSpinnerAdapter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import de.greenrobot.event.EventBus;
-import roboguice.fragment.RoboFragment;
 import roboguice.inject.InjectExtra;
 import roboguice.inject.InjectView;
 
-public class DiscussionAddPostFragment extends RoboFragment {
+public class DiscussionAddPostFragment extends BaseFragment {
 
     static public String TAG = DiscussionAddPostFragment.class.getCanonicalName();
     static public String ENROLLMENT = TAG + ".enrollment";
@@ -76,20 +80,12 @@ public class DiscussionAddPostFragment extends RoboFragment {
     @Inject
     ISegment segIO;
 
-
     private ViewGroup container;
 
     private GetTopicListTask getTopicListTask;
     private CreateThreadTask createThreadTask;
 
     private int selectedTopicIndex;
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        segIO.trackScreenView(courseData.getCourse().getName() + " - AddPost");
-    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
@@ -150,6 +146,11 @@ public class DiscussionAddPostFragment extends RoboFragment {
 
         addPostButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+                Activity activity = getActivity();
+                if (activity != null) {
+                    SoftKeyboardUtil.hide(activity);
+                }
+
                 final String title = titleEditText.getText().toString();
                 final String body = bodyEditText.getText().toString();
 
@@ -210,7 +211,7 @@ public class DiscussionAddPostFragment extends RoboFragment {
 
             @Override
             public void onException(Exception ex) {
-                logger.error(ex);
+                super.onException(ex);
                 addPostButton.setEnabled(true);
             }
         };
@@ -227,25 +228,36 @@ public class DiscussionAddPostFragment extends RoboFragment {
             @Override
             public void onSuccess(CourseTopics courseTopics) {
                 final ArrayList<DiscussionTopic> allTopics = new ArrayList<>();
-                allTopics.addAll(courseTopics.getCoursewareTopics());
                 allTopics.addAll(courseTopics.getNonCoursewareTopics());
+                allTopics.addAll(courseTopics.getCoursewareTopics());
 
                 final TopicSpinnerAdapter adapter = new TopicSpinnerAdapter(container.getContext(), DiscussionTopicDepth.createFromDiscussionTopics(allTopics));
                 topicsSpinner.setAdapter(adapter);
 
                 {
                     // Attempt to select the topic that we navigated from
-                    // Otherwise, leave the default option, which is "Choose a topic..."
-                    int selectedTopicIndex = adapter.getPosition(discussionTopic);
-                    if (selectedTopicIndex >= 0) {
-                        topicsSpinner.setSelection(selectedTopicIndex);
+                    // Otherwise, leave the default option, which is the first non-courseware topic
+                    if (!discussionTopic.isAllType() && !discussionTopic.isFollowingType()) {
+                        int selectedTopicIndex = -1;
+                        if (discussionTopic.getIdentifier() == null) {
+                            // In case of a parent topic, we need to select the first child topic
+                            if (!discussionTopic.getChildren().isEmpty()) {
+                                selectedTopicIndex = adapter.getPosition(discussionTopic.getChildren().get(0));
+                            }
+                        } else {
+                            selectedTopicIndex = adapter.getPosition(discussionTopic);
+                        }
+                        if (selectedTopicIndex >= 0) {
+                            topicsSpinner.setSelection(selectedTopicIndex);
+                        }
                     }
                 }
-            }
 
-            @Override
-            public void onException(Exception ex) {
-                logger.error(ex);
+                DiscussionTopic selectedTopic = ((DiscussionTopicDepth) topicsSpinner.getSelectedItem()).getDiscussionTopic();
+                Map<String, String> values = new HashMap<>();
+                values.put(ISegment.Keys.TOPIC_ID, selectedTopic.getIdentifier());
+                segIO.trackScreenView(ISegment.Screens.FORUM_CREATE_TOPIC_THREAD,
+                        courseData.getCourse().getId(), selectedTopic.getName(), values);
             }
         };
         getTopicListTask.setMessageCallback(null);

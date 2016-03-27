@@ -4,10 +4,6 @@ import android.text.TextUtils;
 
 import com.google.gson.JsonObject;
 import com.google.inject.Injector;
-import com.squareup.okhttp.mockwebserver.Dispatcher;
-import com.squareup.okhttp.mockwebserver.MockResponse;
-import com.squareup.okhttp.mockwebserver.MockWebServer;
-import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import org.edx.mobile.http.Api;
 import org.edx.mobile.http.IApi;
@@ -28,6 +24,11 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import okhttp3.mockwebserver.Dispatcher;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 
 import static org.junit.Assert.assertNotNull;
 
@@ -72,7 +73,6 @@ public class HttpBaseTestCase extends BaseTestCase {
         api = new Api(RuntimeEnvironment.application);
 
         super.setUp();
-
 
         String oAuthClientId = config.getOAuthClientId();
         String testAccount = config.getTestAccountConfig().getName();
@@ -244,10 +244,7 @@ public class HttpBaseTestCase extends BaseTestCase {
                     response.setResponseCode(200);
                 }
             } else if ("GET".equals(method)) {
-                if (urlMatches(path, "/login")) {
-                    response.setBody(getMockResponse("get_login"));
-                    response.setResponseCode(200);
-                } else if (urlMatches(path, "/api/mobile/v0.5/my_user_info")) {
+                if (urlMatches(path, "/api/mobile/v0.5/my_user_info")) {
                     String baseMockUrl = getBaseMockUrl();
                     response.setBody(String.format(Locale.US, getMockResponse("get_my_user_info"), baseMockUrl));
                     response.setResponseCode(200);

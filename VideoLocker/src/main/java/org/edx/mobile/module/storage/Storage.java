@@ -250,7 +250,7 @@ public class Storage implements IStorage {
     }
 
     @Override
-    public VideoModel getDownloadEntryfromVideoModel(VideoBlockModel block){
+    public VideoModel getDownloadEntryFromVideoModel(VideoBlockModel block){
         VideoModel video = db.getVideoEntryByVideoId(block.getId(), null);
         if (video != null) {
             return video;
@@ -260,7 +260,7 @@ public class Storage implements IStorage {
     }
 
     @Override
-    public NativeDownloadModel getNativeDownlaod(long dmId) {
+    public NativeDownloadModel getNativeDownload(long dmId) {
         return dm.getDownload(dmId);
     }
 
@@ -372,7 +372,7 @@ public class Storage implements IStorage {
 
         try {
             Map<String, SectionEntry> courseHeirarchyMap =
-                serviceManager.getCourseHierarchy(courseId, true);
+                serviceManager.getCourseHierarchy(courseId);
 
             // iterate chapters
             for (Entry<String, SectionEntry> chapterentry : courseHeirarchyMap.entrySet()) {

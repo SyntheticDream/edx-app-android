@@ -40,7 +40,7 @@ public class DiscussionComment implements Serializable, IAuthorData {
     private Date endorsedAt;
     private boolean abuseFlagged = false;
     private List<String> editableFields;
-    private List<DiscussionComment> children;
+    private int childCount = 0;
 
     public String getIdentifier() {
         return identifier;
@@ -110,8 +110,46 @@ public class DiscussionComment implements Serializable, IAuthorData {
         return editableFields;
     }
 
-    public List<DiscussionComment> getChildren() {
-        return children;
+    public int getChildCount() {
+        return childCount;
     }
 
+    public void incrementChildCount() {
+        childCount++;
+    }
+
+    public IAuthorData getEndorserData() {
+        if (!endorsed) {
+            return null;
+        } else {
+            return new IAuthorData() {
+                @Override
+                public String getAuthor() {
+                    return endorsedBy;
+                }
+
+                @Override
+                public String getAuthorLabel() {
+                    return endorsedByLabel;
+                }
+
+                @Override
+                public Date getCreatedAt() {
+                    return endorsedAt;
+                }
+
+                @Override
+                public boolean isAuthorAnonymous() {
+                    // because a response cannot be endorsed anonymously
+                    return false;
+                }
+            };
+        }
+    }
+
+    @Override
+    public boolean isAuthorAnonymous() {
+        // because a comment or a response cannot be posted anonymously
+        return false;
+    }
 }

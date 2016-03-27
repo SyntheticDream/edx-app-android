@@ -35,14 +35,11 @@ public interface IPlayer extends Serializable {
     public void hideController();
     public void reset();
     public void setLMSUrl(String url);
-    public void setNextPreviousListener(View.OnClickListener next, View.OnClickListener prev);
+    public void setNextPreviousListeners(View.OnClickListener next, View.OnClickListener prev);
     public void callSettings(Point p);
     public void callPlayerSeeked(long previousPos, long nextPos, boolean isRewindClicked);
     public PlayerController getController();
     public boolean isReset();
-
-    public void setShareEnabled(Boolean shareEnabled);
-    public void setShareVideoListener(PlayerController.ShareVideoListener shareVideoListener);
 
     // methods from PlayerController.MediaPlayerControl interface
     int     getDuration();

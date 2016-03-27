@@ -10,6 +10,7 @@ package org.edx.mobile.view;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,6 +30,7 @@ import com.joanzapata.iconify.widget.IconImageView;
 
 import org.apache.http.protocol.HTTP;
 import org.edx.mobile.R;
+import org.edx.mobile.base.FindCoursesBaseActivity;
 import org.edx.mobile.core.IEdxEnvironment;
 import org.edx.mobile.course.CourseDetail;
 import org.edx.mobile.course.GetCourseDetailTask;
@@ -45,11 +47,11 @@ import org.edx.mobile.view.custom.URLInterceptorWebViewClient;
 
 import java.util.List;
 
-import roboguice.fragment.RoboFragment;
+import org.edx.mobile.base.BaseFragment;
 import roboguice.inject.InjectExtra;
 
 
-public class CourseDetailFragment extends RoboFragment {
+public class CourseDetailFragment extends BaseFragment {
 
     @Nullable
     private GetCourseDetailTask getCourseDetailTask;
@@ -215,12 +217,6 @@ public class CourseDetailFragment extends RoboFragment {
                     courseAbout.setVisibility(View.GONE);
                 }
             }
-
-            @Override
-            protected void onException(Exception e) throws RuntimeException {
-                super.onException(e);
-                showErrorMessage(e);
-            }
         };
         getCourseDetailTask.execute();
     }
@@ -312,40 +308,37 @@ public class CourseDetailFragment extends RoboFragment {
     }
 
     /**
-     * Enroll in a course, then send a local broadcast to notify
-     * {@link org.edx.mobile.view.MyCoursesListActivity} to refresh when it is resumed. Then open
-     * the course dashboard of the enrolled course.
+     * Enroll in a course, Then open the course dashboard of the enrolled course.
      */
     public void enrollInCourse() {
+        environment.getSegment().trackEnrollClicked(courseDetail.course_id, emailOptIn);
         EnrollForCourseTask enrollForCourseTask = new EnrollForCourseTask(getActivity(),
                 courseDetail.course_id, emailOptIn) {
             @Override
             public void onSuccess(Void result) {
                 mEnrolled = true;
-                logger.debug("Enrollment successful:" + courseDetail.course_id);
-
+                logger.debug("Enrollment successful: " + courseDetail.course_id);
                 mEnrollButton.setText(R.string.view_course_button_text);
                 Toast.makeText(getContext(), R.string.you_are_now_enrolled, Toast.LENGTH_SHORT).show();
 
-                GetEnrolledCourseTask getEnrolledCourseTask =
-                        new GetEnrolledCourseTask(getActivity(), courseDetail.course_id) {
-                            @Override
-                            public void onSuccess(EnrolledCoursesResponse course) {
-                                environment.getRouter().showCourseDashboardTabs(getActivity(), environment.getConfig(), course, false);
-                            }
-
-                            @Override
-                            public void onException(Exception ex) {
-                                logger.error(ex);
-                                Toast.makeText(getContext(), R.string.cannot_show_dashboard, Toast.LENGTH_SHORT).show();
-                            }
-                        };
-                getEnrolledCourseTask.execute();
+                new Handler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        GetEnrolledCourseTask getEnrolledCourseTask =
+                                new GetEnrolledCourseTask(getActivity(), courseDetail.course_id) {
+                                    @Override
+                                    public void onSuccess(EnrolledCoursesResponse course) {
+                                        environment.getRouter().showMyCourses(getActivity());
+                                        environment.getRouter().showCourseDashboardTabs(getActivity(), environment.getConfig(), course, false);
+                                    }
+                                };
+                        getEnrolledCourseTask.execute();
+                    }
+                });
             }
-
             @Override
             public void onException(Exception ex) {
-                logger.error(ex);
+                super.onException(ex);
                 Toast.makeText(getContext(), R.string.enrollment_failure, Toast.LENGTH_SHORT).show();
             }
         };
@@ -361,6 +354,7 @@ public class CourseDetailFragment extends RoboFragment {
             List<EnrolledCoursesResponse> enrolledCoursesResponse = api.getEnrolledCourses(true);
             for (EnrolledCoursesResponse course : enrolledCoursesResponse) {
                 if (course.getCourse().getId().equals(courseDetail.course_id)) {
+                    environment.getRouter().showMyCourses(getActivity());
                     environment.getRouter().showCourseDashboardTabs(getActivity(), environment.getConfig(), course, false);
                 }
             }
@@ -368,5 +362,6 @@ public class CourseDetailFragment extends RoboFragment {
             logger.debug(exception.toString());
             Toast.makeText(getContext(), R.string.cannot_show_dashboard, Toast.LENGTH_SHORT).show();
         }
+
     }
 }

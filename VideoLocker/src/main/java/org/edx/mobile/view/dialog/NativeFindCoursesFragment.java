@@ -13,14 +13,14 @@ import com.google.inject.Inject;
 import org.edx.mobile.R;
 import org.edx.mobile.core.IEdxEnvironment;
 import org.edx.mobile.course.CourseDetail;
-import org.edx.mobile.course.CourseList;
 import org.edx.mobile.course.GetCourseListTask;
+import org.edx.mobile.model.Page;
 import org.edx.mobile.view.adapters.FindCoursesListAdapter;
 import org.edx.mobile.view.adapters.InfiniteScrollUtils;
 
-import roboguice.fragment.RoboFragment;
+import org.edx.mobile.base.BaseFragment;
 
-public class NativeFindCoursesFragment extends RoboFragment {
+public class NativeFindCoursesFragment extends BaseFragment {
 
     @Inject
     IEdxEnvironment environment;
@@ -60,9 +60,9 @@ public class NativeFindCoursesFragment extends RoboFragment {
                 }
                 task = new GetCourseListTask(getActivity(), nextPage) {
                     @Override
-                    protected void onSuccess(CourseList courseList) throws Exception {
-                        super.onSuccess(courseList);
-                        callback.onPageLoaded(courseList.results, courseList.pagination.next != null);
+                    protected void onSuccess(Page<CourseDetail> coursesPage) throws Exception {
+                        super.onSuccess(coursesPage);
+                        callback.onPageLoaded(coursesPage);
                         ++nextPage;
                         if (null != viewHolder) {
                             viewHolder.listView.setVisibility(View.VISIBLE);
@@ -73,7 +73,8 @@ public class NativeFindCoursesFragment extends RoboFragment {
                     @Override
                     protected void onException(Exception e) throws RuntimeException {
                         super.onException(e);
-                        showErrorMessage(e);
+                        callback.onError();
+                        nextPage = 1;
                         if (null != viewHolder) {
                             viewHolder.loadingIndicator.setVisibility(View.GONE);
                         }

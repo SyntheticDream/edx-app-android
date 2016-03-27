@@ -1,34 +1,29 @@
 package org.edx.mobile.task;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 
-import org.edx.mobile.discussion.TopicThreads;
+import org.edx.mobile.discussion.DiscussionThread;
+import org.edx.mobile.model.Page;
 
 public abstract class SearchThreadListTask extends
-        Task<TopicThreads> {
+        Task<Page<DiscussionThread>> {
 
-    private static final int PAGE_SIZE = 20;
-
+    @NonNull
     final String courseId;
+    @NonNull
     final String text;
     final int page;
 
-    public SearchThreadListTask(Context context, String courseId, String text, int page) {
+    public SearchThreadListTask(@NonNull Context context, @NonNull String courseId,
+                                @NonNull String text, int page) {
         super(context);
         this.courseId = courseId;
         this.text = text;
         this.page = page;
     }
 
-    public TopicThreads call() throws Exception {
-        try {
-            if (courseId != null) {
-                return environment.getDiscussionAPI().searchThreadList(courseId, text, PAGE_SIZE, page);
-            }
-        } catch (Exception ex) {
-            handle(ex);
-            logger.error(ex, true);
-        }
-        return null;
+    public Page<DiscussionThread> call() throws Exception {
+        return environment.getDiscussionAPI().searchThreadList(courseId, text, page);
     }
 }

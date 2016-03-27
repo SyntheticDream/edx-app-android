@@ -1,68 +1,45 @@
 package org.edx.mobile.loader;
 
 import android.content.Context;
-import android.os.Bundle;
 import android.support.v4.content.AsyncTaskLoader;
 
 import org.edx.mobile.core.IEdxEnvironment;
+import org.edx.mobile.http.RetroHttpException;
 import org.edx.mobile.model.api.EnrolledCoursesResponse;
-import org.edx.mobile.services.ServiceManager;
+import org.edx.mobile.model.api.ProfileModel;
+import org.edx.mobile.module.prefs.PrefManager;
+import org.edx.mobile.user.UserAPI;
 
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
 public class CoursesAsyncLoader extends AsyncTaskLoader<AsyncTaskResult<List<EnrolledCoursesResponse>>> {
-
-    private static final String TAG = CoursesAsyncLoader.class.getCanonicalName();
-    public static final String TAG_COURSE_OAUTH = TAG + ".oauthToken";
-
-    private String oauthToken;
     private AsyncTaskResult<List<EnrolledCoursesResponse>> mData;
+    private Context context;
 
     private Observer mObserver;
 
     IEdxEnvironment environment;
-    ServiceManager api;
 
-    public CoursesAsyncLoader(Context context, Bundle args, IEdxEnvironment environment,  ServiceManager api){
-
+    public CoursesAsyncLoader(Context context, IEdxEnvironment environment) {
         super(context);
+        this.context = context;
         this.environment = environment;
-        this.api = api;
-        if (args.containsKey(TAG_COURSE_OAUTH)){
-            this.oauthToken = args.getString(TAG_COURSE_OAUTH);
-        }
-
     }
 
     @Override
     public AsyncTaskResult<List<EnrolledCoursesResponse>> loadInBackground() {
-
-
-        // FIXME: (PR#120) Should this Loader class really be called when social feature is disabled?
-        if (environment.getConfig().getSocialSharingConfig().isEnabled() && this.oauthToken == null) {
-            return null;
-        }
-
-        AsyncTaskResult<List<EnrolledCoursesResponse>> result = new AsyncTaskResult<List<EnrolledCoursesResponse>>();
+        AsyncTaskResult<List<EnrolledCoursesResponse>> result = new AsyncTaskResult<>();
         try {
-
-            List<EnrolledCoursesResponse> list = getCourses(api);
-            result.setResult(list);
-
-        } catch (Exception e) {
-
-            result.setEx(e);
-
+            List<EnrolledCoursesResponse> enrolledCoursesResponse = environment.getServiceManager().getEnrolledCourses();
+            environment.getNotificationDelegate().syncWithServerForFailure();
+            environment.getNotificationDelegate().checkCourseEnrollment(enrolledCoursesResponse);
+            result.setResult(enrolledCoursesResponse);
+        } catch (Exception exception) {
+            result.setEx(exception);
         }
         return result;
-
-    }
-
-    protected List<EnrolledCoursesResponse> getCourses(ServiceManager api) throws Exception {
-       // return api.getFriendsCourses(false, this.oauthToken); ?
-        return api.getEnrolledCourses(false);
     }
 
     @Override

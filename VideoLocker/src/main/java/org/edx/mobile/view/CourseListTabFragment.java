@@ -30,9 +30,9 @@ import org.edx.mobile.view.adapters.MyCourseAdapter;
 
 import java.util.List;
 
-import roboguice.fragment.RoboFragment;
+import org.edx.mobile.base.BaseFragment;
 
-public abstract class CourseListTabFragment extends RoboFragment implements NetworkObserver, LoaderManager.LoaderCallbacks<AsyncTaskResult<List<EnrolledCoursesResponse>>> {
+public abstract class CourseListTabFragment extends BaseFragment implements NetworkObserver, LoaderManager.LoaderCallbacks<AsyncTaskResult<List<EnrolledCoursesResponse>>> {
 
     protected MyCourseAdapter adapter;
 
@@ -86,7 +86,7 @@ public abstract class CourseListTabFragment extends RoboFragment implements Netw
             }
         };
 
-        loadData(false, false);
+        loadData(true);
     }
 
     public abstract void handleCourseClick(EnrolledCoursesResponse model);
@@ -107,7 +107,7 @@ public abstract class CourseListTabFragment extends RoboFragment implements Netw
                 if (progressBar != null) {
                     progressBar.setVisibility(View.GONE);
                 }
-                loadData(true, false);
+                loadData(false);
             }
         });
 
@@ -133,7 +133,7 @@ public abstract class CourseListTabFragment extends RoboFragment implements Netw
 
     protected abstract int getViewResourceID();
 
-    protected abstract void loadData(boolean forceRefresh, boolean showProgress);
+    protected abstract void loadData(boolean showProgress);
 
     protected void invalidateSwipeFunctionality() {
         swipeLayout.setRefreshing(false);
@@ -210,7 +210,6 @@ public abstract class CourseListTabFragment extends RoboFragment implements Netw
     }
 
     public void showCourseNotListedDialog() {
-        ((BaseFragmentActivity) getActivity()).showWebDialog(getString(R.string.course_not_listed_file_name),
-                null);
+        environment.getRouter().showWebViewDialog((getActivity()), getString(R.string.course_not_listed_file_name), null);
     }
 }

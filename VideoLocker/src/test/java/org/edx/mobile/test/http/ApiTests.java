@@ -14,6 +14,7 @@ import org.edx.mobile.model.course.BlockType;
 import org.edx.mobile.model.course.CourseComponent;
 import org.edx.mobile.model.course.HasDownloadEntry;
 import org.edx.mobile.model.course.IBlock;
+import org.edx.mobile.model.course.VideoBlockModel;
 import org.edx.mobile.module.registration.model.RegistrationDescription;
 import org.junit.Test;
 
@@ -30,15 +31,15 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 
 /**
  * This class contains unit tests for API calls to server.
- *
+ * <p/>
  * if we run it in the CI of github, we can not provide the credential to
  * make the service call.
  * unless we find a way to handle it,  we will disable all the testing agaist
  * real webservice right now
- * 
  */
 public class ApiTests extends HttpBaseTestCase {
 
@@ -47,15 +48,15 @@ public class ApiTests extends HttpBaseTestCase {
     public void setUp() throws Exception {
         super.setUp();
     }
-    
+
     @Test
     public void testSyncLastSubsection() throws Exception {
-        if( shouldSkipTest ) return;
+        assumeFalse(shouldSkipTest);
 
         login();
 
         EnrolledCoursesResponse e = api.getEnrolledCourses().get(0);
-        Map<String, SectionEntry> map = api.getCourseHierarchy(e.getCourse().getId());
+        Map<String, SectionEntry> map = api.getCourseHierarchy(e.getCourse().getId(), false);
         Entry<String, SectionEntry> entry = map.entrySet().iterator().next();
         Entry<String, ArrayList<VideoResponseModel>> subsection = entry.getValue().sections.entrySet().iterator().next();
 
@@ -77,7 +78,7 @@ public class ApiTests extends HttpBaseTestCase {
 
     @Test
     public void testGetLastAccessedModule() throws Exception {
-        if( shouldSkipTest ) return;
+        assumeFalse(shouldSkipTest);
 
         login();
 
@@ -90,12 +91,12 @@ public class ApiTests extends HttpBaseTestCase {
 
         SyncLastAccessedSubsectionResponse model = api.getLastAccessedSubsection(courseId);
         assertNotNull(model);
-    //  print(model.json);
+        //  print(model.json);
     }
 
     @Test
     public void testResetPassword() throws Exception {
-        if( shouldSkipTest ) return;
+        assumeFalse(shouldSkipTest);
 
         print("test: reset password");
         ResetPasswordResponse model = api.resetPassword("user@edx.org");
@@ -106,7 +107,7 @@ public class ApiTests extends HttpBaseTestCase {
 
     @Test
     public void testHandouts() throws Exception {
-        if( shouldSkipTest ) return;
+        assumeFalse(shouldSkipTest);
 
         login();
 
@@ -123,7 +124,7 @@ public class ApiTests extends HttpBaseTestCase {
 
     @Test
     public void testChannelId() throws Exception {
-        if( shouldSkipTest ) return;
+        assumeFalse(shouldSkipTest);
 
         login();
 
@@ -138,7 +139,7 @@ public class ApiTests extends HttpBaseTestCase {
 
     @Test
     public void testCourseStructure() throws Exception {
-        if( shouldSkipTest ) return;
+        assumeFalse(shouldSkipTest);
         login();
 
         // get a course id for this test
@@ -147,8 +148,8 @@ public class ApiTests extends HttpBaseTestCase {
                 courses != null && courses.size() > 0);
         String courseId = courses.get(0).getCourse().getId();
 
-        Map<String, SectionEntry> chapters = api.getCourseHierarchy(courseId);
-        for(Entry<String, SectionEntry> entry : chapters.entrySet()) {
+        Map<String, SectionEntry> chapters = api.getCourseHierarchy(courseId, false);
+        for (Entry<String, SectionEntry> entry : chapters.entrySet()) {
             print("---------------" + entry.getKey() + "---------------");
             for (Entry<String, ArrayList<VideoResponseModel>> se : entry.getValue().sections.entrySet()) {
                 print("------------" + se.getKey() + "------------");
@@ -162,13 +163,13 @@ public class ApiTests extends HttpBaseTestCase {
     @Test
     @Override
     public void login() throws Exception {
-        if( shouldSkipTest ) return;
+        assumeFalse(shouldSkipTest);
         super.login();
     }
 
     @Test
     public void testGetAnnouncement() throws Exception {
-        if( shouldSkipTest ) return;
+        assumeFalse(shouldSkipTest);
 
         login();
 
@@ -187,7 +188,7 @@ public class ApiTests extends HttpBaseTestCase {
 
     @Test
     public void testReadRegistrationDescription() throws Exception {
-        if( shouldSkipTest ) return;
+        assumeFalse(shouldSkipTest);
 
         RegistrationDescription form = api.getRegistrationDescription();
 
@@ -203,7 +204,7 @@ public class ApiTests extends HttpBaseTestCase {
 
     @Test
     public void testEnrollInACourse() throws Exception {
-        if( shouldSkipTest ) return;
+        assumeFalse(shouldSkipTest);
 
         login();
 
@@ -219,7 +220,7 @@ public class ApiTests extends HttpBaseTestCase {
 
     @Test
     public void testGetCourseStructure() throws Exception {
-        if( shouldSkipTest ) return;
+        assumeFalse(shouldSkipTest);
 
         login();
 
@@ -283,7 +284,7 @@ public class ApiTests extends HttpBaseTestCase {
         assertSame(courseComponent,
                 courseComponent.getAncestor(EnumSet.of(blockType)));
 
-        List<HasDownloadEntry> videos = courseComponent.getVideos();
+        List<VideoBlockModel> videos = courseComponent.getVideos();
         assertNotNull(videos);
         for (HasDownloadEntry video : videos) {
             assertNotNull(video);
