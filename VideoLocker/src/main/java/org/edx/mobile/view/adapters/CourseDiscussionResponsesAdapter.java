@@ -98,11 +98,7 @@ public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter imple
             return new DiscussionThreadViewHolder(discussionThreadRow);
         }
         if (viewType == RowType.PROGRESS) {
-            View discussionThreadRow = LayoutInflater.
-                    from(parent.getContext()).
-                    inflate(R.layout.list_view_footer_progress, parent, false);
-
-            return new ShowMoreViewHolder(discussionThreadRow);
+            return new LoadingViewHolder(parent);
         }
 
         View discussionResponseRow = LayoutInflater.
@@ -128,7 +124,7 @@ public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter imple
                 bindViewHolderToResponseRow((DiscussionResponseViewHolder) holder, position);
                 break;
             case RowType.PROGRESS:
-                bindViewHolderToShowMoreRow((ShowMoreViewHolder) holder);
+                bindViewHolderToShowMoreRow((LoadingViewHolder) holder);
                 break;
         }
 
@@ -154,7 +150,8 @@ public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter imple
         bindSocialView(holder.socialLayoutViewHolder, discussionThread);
         DiscussionTextUtils.setAuthorAttributionText(
                 holder.authorLayoutViewHolder.discussionAuthorTextView,
-                R.string.post_attribution, discussionThread, initialTimeStampMs,
+                DiscussionTextUtils.AuthorAttributionLabel.POST,
+                discussionThread, initialTimeStampMs,
                 new Runnable() {
                     @Override
                     public void run() {
@@ -226,7 +223,7 @@ public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter imple
         }
     }
 
-    private void bindViewHolderToShowMoreRow(ShowMoreViewHolder holder) {
+    private void bindViewHolderToShowMoreRow(LoadingViewHolder holder) {
     }
 
 
@@ -253,7 +250,7 @@ public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter imple
 
         DiscussionTextUtils.setAuthorAttributionText(
                 holder.authorLayoutViewHolder.discussionAuthorTextView,
-                R.string.post_attribution,
+                DiscussionTextUtils.AuthorAttributionLabel.POST,
                 comment, initialTimeStampMs, new Runnable() {
                     @Override
                     public void run() {
@@ -281,31 +278,31 @@ public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter imple
         holder.socialLayoutViewHolder.threadFollowContainer.setVisibility(View.INVISIBLE);
 
         if (comment.isEndorsed()) {
+            holder.responseAnswerTextView.setVisibility(View.VISIBLE);
+            holder.responseAnswerAuthorTextView.setVisibility(View.VISIBLE);
             DiscussionThread.ThreadType threadType = discussionThread.getType();
-            @StringRes int attributionStringRes;
+            DiscussionTextUtils.AuthorAttributionLabel authorAttributionLabel;
             @StringRes int endorsementTypeStringRes;
             switch (threadType) {
                 case QUESTION:
-                    attributionStringRes = R.string.answer_author_attribution;
+                    authorAttributionLabel = DiscussionTextUtils.AuthorAttributionLabel.ANSWER;
                     endorsementTypeStringRes = R.string.discussion_responses_answer;
                     break;
                 case DISCUSSION:
                 default:
+                    authorAttributionLabel = DiscussionTextUtils.AuthorAttributionLabel.ENDORSEMENT;
                     endorsementTypeStringRes = R.string.discussion_responses_endorsed;
-                    attributionStringRes = R.string.endorser_attribution;
                     break;
             }
             holder.responseAnswerTextView.setText(endorsementTypeStringRes);
             DiscussionTextUtils.setAuthorAttributionText(holder.responseAnswerAuthorTextView,
-                    attributionStringRes, comment.getEndorserData(), initialTimeStampMs,
+                    authorAttributionLabel, comment.getEndorserData(), initialTimeStampMs,
                     new Runnable() {
                         @Override
                         public void run() {
                             listener.onClickAuthor(comment.getEndorsedBy());
                         }
                     });
-            holder.responseAnswerTextView.setVisibility(View.VISIBLE);
-            holder.responseAnswerAuthorTextView.setVisibility(View.VISIBLE);
         } else {
             holder.responseAnswerTextView.setVisibility(View.GONE);
             holder.responseAnswerAuthorTextView.setVisibility(View.GONE);
@@ -420,19 +417,13 @@ public class CourseDiscussionResponsesAdapter extends RecyclerView.Adapter imple
         discussionThread.incrementCommentCount();
         String parentId = parent.getIdentifier();
         for (ListIterator<DiscussionComment> responseIterator = discussionResponses.listIterator();
-                responseIterator.hasNext();) {
+             responseIterator.hasNext(); ) {
             DiscussionComment response = responseIterator.next();
             if (parentId.equals(response.getIdentifier())) {
                 response.incrementChildCount();
                 notifyItemChanged(1 + responseIterator.previousIndex());
                 break;
             }
-        }
-    }
-
-    public static class ShowMoreViewHolder extends RecyclerView.ViewHolder {
-        public ShowMoreViewHolder(View itemView) {
-            super(itemView);
         }
     }
 

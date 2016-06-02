@@ -2,6 +2,10 @@ This is the source code for the edX mobile Android app. It is changing rapidly
 and its structure should not be relied upon. See http://code.edx.org for other
 parts of the edX code base.
 
+It requires the "Dogwood" release of open edX or newer. See
+https://openedx.atlassian.net/wiki/display/COMM/Open+edX+Releases for more
+information.
+
 License
 =======
 This software is licensed under version 2 of the Apache License unless
@@ -21,10 +25,6 @@ This project is meant to be built using Android Studio. It can also be built fro
 3. Choose ``edx-app-android``.
 
 4. Click the **Run** button.
-
-*Note: Our build system requires Java 7 or later.  If you see an error
-mentioning "Unsupported major.minor version 51.0 " then you should install a
-newer Java SDK.*
 
 Configuration
 =============
@@ -74,3 +74,13 @@ If you need to make more in depth UI changes, most of the user interface is spec
 
 As mentioned, the app relies on the presence of several third party services:
 Facebook, NewRelic, Google+, SegmentIO, and Crashlytics. You must remove references to each of these services you choose not to use. You can comment out the lines that mention these services. We're working to make those dependencies optional.
+
+Frequently Asked Questions
+==========================
+Q: I see an error that mentions "Unsupported major.minor version 51.0". How do I fix this?
+
+A: Our build system requires Java 7 or later. If you see this error, install Java 7 or later.
+
+	 You will also need to specify the new JDK version in Android Studio. Refer to this Stack Overflow entry for help doing so:
+
+	 http://stackoverflow.com/questions/30631286/how-to-specify-the-jdk-version-in-android-studio

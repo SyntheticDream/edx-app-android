@@ -260,16 +260,19 @@
     <string name="discussion_priviledged_author_label_staff">Staff</string>
     <!-- The label to use when indicating a post was authored by a privileged user -->
     <string name="discussion_priviledged_author_attribution">By %s</string>
-    <!-- The date and author of a discussion comment, question, or thread, e.g. "3 days ago by Brian STAFF" -->
-    <string name="post_attribution">{time} by {author} {author_label}</string>
-    <!-- The date and author of an answer to a discussion question e.g. "Marked as answer 2 days ago by Khalid TA" -->
-    <string name="answer_author_attribution">Marked as answer {time} by {author} {author_label}</string>
-    <!-- The date and author of an endorsed response to a discussion thread e.g. "Endorsed 2 days ago by Khalid TA" -->
-    <string name="endorser_attribution">Endorsed {time} by {author} {author_label}</string>
     <!-- Label for the visibility of a discussion post that is only visible to cohort -->
     <string name="discussion_post_visibility_cohort">This post is visible only to {cohort}.</string>
     <!-- Label for the visibility of a discussion post that is visible to everyone -->
     <string name="discussion_post_visibility_everyone">This post is visible to everyone.</string>
+    <!-- Used while constructing the author attribution text for a discussion post e.g. "3 days ago by Brian (Staff)" -->
+    <string name="discussion_post_author_attribution">by {author}</string>
+    <!-- Used while constructing the author attribution text for an answer response e.g. "Marked as answer 2 days ago by Khalid (Community TA)" -->
+    <string name="discussion_post_marked_as_answer">Marked as answer</string>
+    <!-- Used while constructing the author attribution text for an endorsed response e.g. "Endorsed 2 days ago by Khalid" -->
+    <string name="discussion_post_endorsed">Endorsed</string>
+    <!-- Used for putting authorLabel into parenthesis e.g. (Community TA) or (Staff) -->
+    <string name="discussion_post_author_label_attribution">({text})</string>
+
 
     <!--Discussion Responses-->
     <!--Label for question type discussions that are answered-->
@@ -516,6 +519,8 @@
     <string name="email_chooser_header">Send email using...</string>
     <!-- Error shown when user attempts to send email, but has no email app -->
     <string name="email_client_not_present">No e-mail clients installed</string>
+    <!-- Search for a course prompt -->
+    <string name="search_for_courses">I want to learn about...</string>
 
     <!-- Landing Activity text -->
     <!-- Prompt leading user to sign in screen -->
@@ -596,6 +601,7 @@
     <string name="forum_no_results_for_search_query">No results found for “{search_query}”. Try another search term or select a discussion category to browse.</string>
     <string name="forum_no_results_for_all_posts">There are no posts in this course discussion.</string>
     <string name="forum_no_results_for_following">You are not following any posts.</string>
+    <string name="forum_no_results_for_filtered_following">Filter results do not include any followed posts.</string>
     <string name="forum_no_results_in_category">There are no posts in this discussion category.</string>
     <string name="forum_no_results_with_filter">Try removing your post filter.</string>
     <string name="forum_post_i_am_following">Posts I’m Following</string>
@@ -646,5 +652,13 @@
     <string name="edit_user_profile_photo_crop_cancel">Cancel</string>
     <!-- Button that will confirm the crop region and continue to upload the cropped photo -->
     <string name="edit_user_profile_photo_crop_save">Choose</string>
+    <!-- Tab title for section of profile that displays a user's bio -->
+    <string name="profile_tab_bio">About</string>
+    <!-- Tab title for section of profile that lists a user's accomplishments -->
+    <string name="profile_tab_accomplishment">Accomplishments</string>
+    <!-- Button that will initiate sharing one of a user's accomplishments -->
+    <string name="share_accomplishment_button">Share your accomplishment</string>
+    <!-- Text that pre-populates your post/email/SMS when sharing certificate -->
+    <string name="share_accomplishment_message">I just earned a badge on {platform_name}! Check it out: {badge_url}</string>
 
 </resources>

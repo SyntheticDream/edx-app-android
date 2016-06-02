@@ -2,22 +2,19 @@ package org.edx.mobile.profiles;
 
 import org.edx.mobile.module.analytics.ISegment;
 import org.edx.mobile.module.prefs.UserPrefs;
-import org.edx.mobile.profiles.UserProfileImageViewModel;
-import org.edx.mobile.profiles.UserProfileInteractor;
-import org.edx.mobile.profiles.UserProfilePresenter;
-import org.edx.mobile.profiles.UserProfileViewModel;
 import org.edx.mobile.test.PresenterTest;
 import org.edx.mobile.util.observer.CachingObservable;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 
+import java.util.Collections;
+import java.util.List;
+
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class UserProfilePresenterTest extends PresenterTest<UserProfilePresenter, UserProfilePresenter.ViewInterface> {
@@ -27,6 +24,8 @@ public class UserProfilePresenterTest extends PresenterTest<UserProfilePresenter
     @Mock
     private UserProfileInteractor userProfileInteractor;
     @Mock
+    private UserProfileTabsInteractor userProfileTabsInteractor;
+    @Mock
     private UserPrefs userPrefs;
     @Mock
     private ISegment segment;
@@ -35,16 +34,21 @@ public class UserProfilePresenterTest extends PresenterTest<UserProfilePresenter
 
     private CachingObservable<UserProfileImageViewModel> photoObservable;
 
+    private CachingObservable<List<UserProfileTab>> tabsObservable;
+
     @Before
     public void before() {
         accountObservable = new CachingObservable<>();
         photoObservable = new CachingObservable<>();
+        tabsObservable = new CachingObservable<>();
         when(userProfileInteractor.getUsername()).thenReturn(PROFILE_USERNAME);
         when(userProfileInteractor.observeProfile()).thenReturn(accountObservable);
         when(userProfileInteractor.observeProfileImage()).thenReturn(photoObservable);
+        when(userProfileTabsInteractor.observeTabs()).thenReturn(tabsObservable);
         startPresenter(new UserProfilePresenter(
                 segment,
-                userProfileInteractor
+                userProfileInteractor,
+                userProfileTabsInteractor
         ));
     }
 
@@ -66,6 +70,7 @@ public class UserProfilePresenterTest extends PresenterTest<UserProfilePresenter
         accountObservable.onError(error);
         verify(view).showError(error);
     }
+
     @Test
     public void whenInteractorEmitsProfileImage_setsProfileImageOnView() {
         final UserProfileImageViewModel model = mock(UserProfileImageViewModel.class);
@@ -77,6 +82,13 @@ public class UserProfilePresenterTest extends PresenterTest<UserProfilePresenter
     public void whenInteractorEmitsProfileImageError_noInteractionsWithView() {
         photoObservable.onError(new RuntimeException());
         verify(view, never()).showError(any(Throwable.class));
+    }
+
+    @Test
+    public void whenInteractorEmitsTabs_showsTabsOnView() {
+        final List<UserProfileTab> tabs = Collections.emptyList();
+        tabsObservable.onData(tabs);
+        verify(view).showTabs(tabs);
     }
 
     @Test

@@ -1,5 +1,6 @@
 package org.edx.mobile.view;
 
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.text.Editable;
@@ -24,6 +25,7 @@ import org.edx.mobile.discussion.DiscussionThread;
 import org.edx.mobile.logger.Logger;
 import org.edx.mobile.module.analytics.ISegment;
 import org.edx.mobile.task.CreateCommentTask;
+import org.edx.mobile.util.SoftKeyboardUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -59,6 +61,9 @@ public class DiscussionAddCommentFragment extends BaseFragment {
     @InjectView(R.id.tvTimeAuthor)
     private TextView textViewTimeAuthor;
 
+    @InjectView(R.id.discussion_responses_answer_text_view)
+    private TextView responseAnswerTextView;
+
     @Inject
     private Router router;
 
@@ -87,9 +92,12 @@ public class DiscussionAddCommentFragment extends BaseFragment {
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
         textViewResponse.setText(Html.fromHtml(discussionResponse.getRenderedBody()));
+        DiscussionTextUtils.setEndorsedState(responseAnswerTextView, discussionThread, discussionResponse);
         DiscussionTextUtils.setAuthorAttributionText(textViewTimeAuthor,
-                R.string.post_attribution, discussionResponse, new Runnable() {
+                DiscussionTextUtils.AuthorAttributionLabel.POST,
+                discussionResponse,new Runnable() {
                     @Override
                     public void run() {
                         router.showUserProfile(getActivity(), discussionResponse.getAuthor());
@@ -146,5 +154,13 @@ public class DiscussionAddCommentFragment extends BaseFragment {
         createCommentTask.setTaskProcessCallback(null);
         createCommentTask.setProgressDialog(createCommentProgressBar);
         createCommentTask.execute();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            SoftKeyboardUtil.clearViewFocus(editTextNewComment);
+        }
     }
 }

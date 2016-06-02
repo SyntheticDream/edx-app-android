@@ -7,14 +7,13 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.multidex.MultiDexApplication;
 
-import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.answers.Answers;
+import com.crashlytics.android.core.CrashlyticsCore;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.joanzapata.iconify.Iconify;
 import com.joanzapata.iconify.fonts.FontAwesomeModule;
 import com.newrelic.agent.android.NewRelic;
-import com.parse.Parse;
-import com.parse.ParseInstallation;
 
 import org.edx.mobile.BuildConfig;
 import org.edx.mobile.R;
@@ -79,7 +78,7 @@ public abstract class MainApplication extends MultiDexApplication {
 
         // initialize Fabric
         if (config.getFabricConfig().isEnabled() && !BuildConfig.DEBUG) {
-            Fabric.with(this, new Crashlytics());
+            Fabric.with(this, new CrashlyticsCore(), new Answers());
             EventBus.getDefault().register(new CrashlyticsCrashReportObserver());
         }
 
@@ -98,22 +97,7 @@ public abstract class MainApplication extends MultiDexApplication {
             com.facebook.Settings.setApplicationId(config.getFacebookConfig().getFacebookAppId());
         }
 
-        boolean needVersionUpgrade = needVersionUpgrade(this);
-        // initialize Parse notification
-        // it maybe good to support multiple notification providers running
-        // at the same time, as it is less like to be the case in the future,
-        // we at two level of controls just for easy change of different providers.
-        if (config.isNotificationEnabled()) {
-            Config.ParseNotificationConfig parseNotificationConfig =
-                    config.getParseNotificationConfig();
-            if (parseNotificationConfig.isEnabled()) {
-                Parse.enableLocalDatastore(this);
-                Parse.initialize(this, parseNotificationConfig.getParseApplicationId(), parseNotificationConfig.getParseClientKey());
-                tryToUpdateParseForAppUpgrade(this, needVersionUpgrade);
-            }
-        }
-
-        if (needVersionUpgrade) {
+        if (needVersionUpgrade(this)) {
             // try repair of download data if app version is updated
             injector.getInstance(IStorage.class).repairDownloadCompletionData();
         }
@@ -122,9 +106,9 @@ public abstract class MainApplication extends MultiDexApplication {
         Iconify.with(new FontAwesomeModule());
 
         CalligraphyConfig.initDefault(new CalligraphyConfig.Builder()
-                        .setDefaultFontPath("fonts/OpenSans-Regular.ttf")
-                        .setFontAttrId(R.attr.fontPath)
-                        .build()
+                .setDefaultFontPath("fonts/OpenSans-Regular.ttf")
+                .setFontAttrId(R.attr.fontPath)
+                .build()
         );
     }
 
@@ -151,51 +135,10 @@ public abstract class MainApplication extends MultiDexApplication {
         return needVersionUpgrade;
     }
 
-    /**
-     * if app is launched from upgrading, we need to resync with parse server.
-     *
-     * @param context
-     */
-    private void tryToUpdateParseForAppUpgrade(Context context, boolean needVersionUpgrade) {
-
-        PrefManager.AppInfoPrefManager pmanager = new PrefManager.AppInfoPrefManager(context);
-        boolean hadNotification = pmanager.isNotificationEnabled();
-        if (needVersionUpgrade) {
-            if (hadNotification) {
-                pmanager.setAppUpgradeNeedSyncWithParse(true);
-            }
-        }
-        ParseInstallation installation = ParseInstallation.getCurrentInstallation();
-        final String languageKey = "preferredLanguage";
-        final String countryKey = "preferredCountry";
-        String savedPreferredLanguage = installation.getString(languageKey);
-        String savedPreferredCountry = installation.getString(countryKey);
-        Locale locale = Locale.getDefault();
-        String currentPreferredLanguage = locale.getLanguage();
-        String currentPreferredCountry = locale.getCountry();
-        boolean dirty = false;
-        if (!currentPreferredLanguage.equals(savedPreferredLanguage)) {
-            installation.put(languageKey, currentPreferredLanguage);
-            dirty = true;
-        }
-        if (!currentPreferredCountry.equals(savedPreferredCountry)) {
-            installation.put(countryKey, currentPreferredCountry);
-            dirty = true;
-        }
-        if (dirty) {
-            try {
-                installation.saveInBackground();
-            } catch (Exception ex) {
-                logger.error(ex);
-            }
-        }
-        pmanager.setNotificationEnabled(true);
-    }
-
     public static class CrashlyticsCrashReportObserver {
         @SuppressWarnings("unused")
         public void onEventMainThread(Logger.CrashReportEvent e) {
-            Crashlytics.logException(e.getError());
+            CrashlyticsCore.getInstance().logException(e.getError());
         }
     }
 

@@ -54,6 +54,7 @@ public class Config {
     public static final String TEST_ACCOUNT_NAME = "NAME";
     public static final String TEST_ACCOUNT_PASSWORD = "PASSWORD";
 
+    // Features
     public static final String USER_PROFILES_ENABLED = "USER_PROFILES_ENABLED";
     public static final String DISCUSSIONS_ENABLED = "DISCUSSIONS_ENABLED";
 
@@ -61,12 +62,17 @@ public class Config {
 
     public static final String COURSE_SHARING_ENABLED = "COURSE_SHARING_ENABLED";
 
+    public static final String BADGES_ENABLED = "BADGES_ENABLED";
+
     private static final String SERVER_SIDE_CHANGED_THREAD = "SERVER_SIDE_CHANGED_THREAD";
+
+    // E2E Test
+    public static final String END_TO_END_TEST = "END_TO_END_TEST";
 
     /**
      * Zero Rating configuration.
      */
-    public class ZeroRatingConfig {
+    public static class ZeroRatingConfig {
         private @SerializedName("ENABLED") boolean mEnabled;
         private @SerializedName("CARRIERS") List<String> mCarriers;
         private @SerializedName("WHITE_LIST_OF_DOMAINS") List<String> mWhiteListedDomains;
@@ -89,7 +95,7 @@ public class Config {
      *
      * If TYPE is not "webview" in any letter case, defaults to "native"
      */
-    public class EnrollmentConfig {
+    public static class EnrollmentConfig {
         private @SerializedName("WEBVIEW") WebViewConfig mWebViewConfig;
         private @SerializedName("TYPE") String mCourseEnrollmentType;
 
@@ -114,11 +120,16 @@ public class Config {
         public String getCourseInfoUrlTemplate() {
             return mWebViewConfig.getCourseInfoUrlTemplate();
         }
+
+        public boolean isWebCourseSearchEnabled() {
+            return mWebViewConfig.isWebCourseSearchEnabled();
+        }
     }
 
     public static class WebViewConfig {
         private @SerializedName("COURSE_SEARCH_URL") String mSearchUrl;
         private @SerializedName("COURSE_INFO_URL_TEMPLATE") String mCourseInfoUrlTemplate;
+        private @SerializedName("SEARCH_BAR_ENABLED") boolean mSearchBarEnabled;
 
         public String getCourseSearchUrl() {
             return mSearchUrl;
@@ -127,14 +138,24 @@ public class Config {
         public String getCourseInfoUrlTemplate() {
             return mCourseInfoUrlTemplate;
         }
+
+        public boolean isWebCourseSearchEnabled() { return mSearchBarEnabled; }
     }
 
     /**
      * Facebook configuration.
      */
-    public class FacebookConfig {
+    public static class FacebookConfig {
         private @SerializedName("ENABLED") boolean mEnabled;
         private @SerializedName("FACEBOOK_APP_ID") String mFacebookAppId;
+
+        public FacebookConfig(boolean mEnabled, String mFacebookAppId) {
+            this.mEnabled = mEnabled;
+            this.mFacebookAppId = mFacebookAppId;
+        }
+
+        public FacebookConfig() {
+        }
 
         public boolean isEnabled() {
             return mEnabled && !TextUtils.isEmpty(mFacebookAppId);
@@ -148,8 +169,15 @@ public class Config {
     /**
      * Google configuration.
      */
-    public class GoogleConfig {
+    public static class GoogleConfig {
         private @SerializedName("ENABLED") boolean mEnabled;
+
+        public GoogleConfig(boolean mEnabled) {
+            this.mEnabled = mEnabled;
+        }
+
+        public GoogleConfig() {
+        }
 
         public boolean isEnabled() {
             return mEnabled;
@@ -159,7 +187,7 @@ public class Config {
     /**
      * Twitter configuration.
      */
-    public class TwitterConfig {
+    public static class TwitterConfig {
         private @SerializedName("HASHTAG") String mHashTag;
 
         public String getHashTag() {
@@ -170,7 +198,7 @@ public class Config {
     /**
      * Fabric configuration.
      */
-    public class FabricConfig {
+    public static class FabricConfig {
         private @SerializedName("ENABLED") boolean mEnabled;
         private @SerializedName("FABRIC_KEY") String mFabricKey;
         private @SerializedName("FABRIC_BUILD_SECRET") String mFabricBuildSecret;
@@ -193,7 +221,7 @@ public class Config {
     /**
      * New Relic configuration.
      */
-    public class NewRelicConfig {
+    public static class NewRelicConfig {
         private @SerializedName("ENABLED") boolean mEnabled;
         private @SerializedName("NEW_RELIC_KEY") String mNewRelicKey;
 
@@ -209,7 +237,7 @@ public class Config {
     /**
      * Testing account - we may need a better solution in the future.
      */
-    public class TestAccountConfig {
+    public static class TestAccountConfig {
         private @SerializedName("NAME") String mName;
         private @SerializedName("PASSWORD") String mPassword;
 
@@ -218,28 +246,26 @@ public class Config {
     }
 
     /**
-     * Parse Notification
+     * End-to-end test configurations
      */
-    public class ParseNotificationConfig {
-        private @SerializedName("NOTIFICATIONS_ENABLED") boolean mEnabled;
-        private @SerializedName("APPLICATION_ID") String mParseApplicationId;
-        private @SerializedName("CLIENT_KEY") String mParseClientKey;
+    public static class EndToEndConfig {
+        private static final String DEFAULT_EMAIL_TEMPLATE = "test-{unique_id}@example.com";
+        private @SerializedName("EMAIL_TEMPLATE") String mEmailTemplate;
+        private @SerializedName("TEST_COURSE_ID") String mTestCourseId;
 
-        public boolean isEnabled() {
-            return mEnabled && !TextUtils.isEmpty(mParseClientKey);
+        public String getEmailTemplate() {
+            return TextUtils.isEmpty(mEmailTemplate) ? DEFAULT_EMAIL_TEMPLATE : mEmailTemplate;
         }
 
-        public String getParseApplicationId() { return mParseApplicationId; }
-
-        public String getParseClientKey() {
-            return mParseClientKey;
+        public String getTestCourseId() {
+            return mTestCourseId;
         }
     }
 
     /**
      * SegmentIO configuration.
      */
-    public class SegmentConfig {
+    public static class SegmentConfig {
         private @SerializedName("ENABLED") boolean mEnabled;
         private @SerializedName("SEGMENT_IO_WRITE_KEY") String mSegmentWriteKey;
 
@@ -255,7 +281,7 @@ public class Config {
     /**
      * Domain White List configuration.
      */
-    public class DomainWhiteListConfig {
+    public static class DomainWhiteListConfig {
         private @SerializedName("ENABLED") boolean mEnabled;
         private @SerializedName("DOMAINS") List<String> mDomains;
 
@@ -372,6 +398,10 @@ public class Config {
         return getBoolean(USER_PROFILES_ENABLED, false);
     }
 
+    public boolean isBadgesEnabled() {
+        return getBoolean(BADGES_ENABLED, false);
+    }
+
     public boolean isDiscussionsEnabled() {
         return getBoolean(DISCUSSIONS_ENABLED, false);
     }
@@ -467,18 +497,6 @@ public class Config {
         }
     }
 
-    public ParseNotificationConfig getParseNotificationConfig() {
-        JsonElement element = getObject(PARSE);
-        if(element != null) {
-            Gson gson = new Gson();
-            ParseNotificationConfig config = gson.fromJson(element, ParseNotificationConfig.class);
-            return config;
-        }
-        else {
-            return new ParseNotificationConfig();
-        }
-    }
-
     public SegmentConfig getSegmentConfig() {
         JsonElement element = getObject(SEGMENT_IO);
         if(element != null) {
@@ -500,6 +518,18 @@ public class Config {
         }
         else {
             return new TestAccountConfig();
+        }
+    }
+
+    public EndToEndConfig getEndToEndConfig() {
+        JsonElement element = getObject(END_TO_END_TEST);
+        if(element != null) {
+            Gson gson = new Gson();
+            EndToEndConfig config = gson.fromJson(element, EndToEndConfig.class);
+            return config;
+        }
+        else {
+            return new EndToEndConfig();
         }
     }
 }

@@ -45,7 +45,7 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
     public static final String ACTION_SHOW_MESSAGE_ERROR = "ACTION_SHOW_MESSAGE_ERROR";
 
     private MenuItem offlineMenuItem;
-    private ActionBarDrawerToggle mDrawerToggle;
+    protected ActionBarDrawerToggle mDrawerToggle;
     //FIXME - we should not set a separate flag to indicate the status of UI component
     private boolean isUiOnline = true;
     private boolean isConnectedToWifi = false;
@@ -108,12 +108,6 @@ public abstract class BaseFragmentActivity extends BaseAppActivity
             bar.setDisplayShowHomeEnabled(true);
             bar.setDisplayHomeAsUpEnabled(true);
             bar.setIcon(android.R.color.transparent);
-            //If activity is in landscape, hide the Action bar
-            if (isLandscape()) {
-                bar.hide();
-            } else {
-                bar.show();
-            }
         }
     }
 

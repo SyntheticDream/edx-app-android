@@ -3,6 +3,8 @@ package org.edx.mobile.loader;
 import android.content.Context;
 import android.support.v4.content.AsyncTaskLoader;
 
+import com.google.inject.Inject;
+
 import org.edx.mobile.core.IEdxEnvironment;
 import org.edx.mobile.http.RetroHttpException;
 import org.edx.mobile.model.api.EnrolledCoursesResponse;
@@ -14,31 +16,49 @@ import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
+import roboguice.RoboGuice;
+
 public class CoursesAsyncLoader extends AsyncTaskLoader<AsyncTaskResult<List<EnrolledCoursesResponse>>> {
     private AsyncTaskResult<List<EnrolledCoursesResponse>> mData;
-    private Context context;
-
+    private final Context context;
     private Observer mObserver;
 
+    @Inject
     IEdxEnvironment environment;
 
-    public CoursesAsyncLoader(Context context, IEdxEnvironment environment) {
+    @Inject
+    UserAPI api;
+
+    public CoursesAsyncLoader(Context context) {
         super(context);
         this.context = context;
-        this.environment = environment;
+        RoboGuice.injectMembers(context, this);
     }
 
     @Override
     public AsyncTaskResult<List<EnrolledCoursesResponse>> loadInBackground() {
+
+        PrefManager pref = new PrefManager(context, PrefManager.Pref.LOGIN);
+        ProfileModel profile = pref.getCurrentUserProfile();
+        List<EnrolledCoursesResponse> enrolledCoursesResponse = null;
+
         AsyncTaskResult<List<EnrolledCoursesResponse>> result = new AsyncTaskResult<>();
+
         try {
-            List<EnrolledCoursesResponse> enrolledCoursesResponse = environment.getServiceManager().getEnrolledCourses();
-            environment.getNotificationDelegate().syncWithServerForFailure();
-            environment.getNotificationDelegate().checkCourseEnrollment(enrolledCoursesResponse);
-            result.setResult(enrolledCoursesResponse);
-        } catch (Exception exception) {
+            if (profile != null) {
+                enrolledCoursesResponse = api.getUserEnrolledCourses(profile.username, false);
+                environment.getNotificationDelegate().syncWithServerForFailure();
+                if (enrolledCoursesResponse != null) {
+                    environment.getNotificationDelegate().checkCourseEnrollment(enrolledCoursesResponse);
+                }
+            }
+
+        } catch (RetroHttpException exception) {
             result.setEx(exception);
         }
+
+        result.setResult(enrolledCoursesResponse);
+
         return result;
     }
 

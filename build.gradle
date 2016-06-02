@@ -5,12 +5,12 @@ buildscript {
         mavenCentral()  //  This is the Maven Central repo
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:1.5.0'
+        classpath 'com.android.tools.build:gradle:2.1.0'
     }
 }
 
 project.ext {
-    BUILD_TOOLS_VERSION = "23.0.2"
+    BUILD_TOOLS_VERSION = "23.0.3"
 
     // dummy keystore configuration if not already defined
     if ( !project.properties.containsKey("RELEASE_STORE_FILE")) {
@@ -53,3 +53,23 @@ task copyAcceptanceTestBuildArtifacts << { task ->
     }
 }
 copyAcceptanceTestBuildArtifacts.dependsOn createBuildArtifactsDirectory
+
+
+// Disables preDex which reduces the amount of memory required to build an APK. This is important
+// for CI where there is a memory limit. PreDex is also not useful in CI where a new build is
+// desired on every run.
+project.ext.preDexLibs = !project.hasProperty('disablePreDex')
+
+subprojects {
+    project.plugins.whenPluginAdded { plugin ->
+        if ("com.android.build.gradle.AppPlugin".equals(plugin.class.name)) {
+            project.android.dexOptions.preDexLibraries = rootProject.ext.preDexLibs
+        } else if ("com.android.build.gradle.LibraryPlugin".equals(plugin.class.name)) {
+            project.android.dexOptions.preDexLibraries = rootProject.ext.preDexLibs
+        }
+    }
+}
+
+// Increases adb timeout for installing an apk. This tweak is need for slow adb installs on an
+// emulator for CI.
+com.android.ddmlib.DdmPreferences.setTimeOut(600000)

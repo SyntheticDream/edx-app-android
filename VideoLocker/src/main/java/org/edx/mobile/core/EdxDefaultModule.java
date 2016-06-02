@@ -3,6 +3,9 @@ package org.edx.mobile.core;
 import android.content.Context;
 import android.support.v7.widget.LinearLayoutManager;
 
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.inject.AbstractModule;
 
 import org.edx.mobile.base.MainApplication;
@@ -11,6 +14,8 @@ import org.edx.mobile.http.Api;
 import org.edx.mobile.http.IApi;
 import org.edx.mobile.http.OkHttpUtil;
 import org.edx.mobile.http.RestApiManager;
+import org.edx.mobile.http.serialization.JsonPageDeserializer;
+import org.edx.mobile.model.Page;
 import org.edx.mobile.module.analytics.ISegment;
 import org.edx.mobile.module.analytics.ISegmentEmptyImpl;
 import org.edx.mobile.module.analytics.ISegmentImpl;
@@ -22,11 +27,11 @@ import org.edx.mobile.module.download.IDownloadManager;
 import org.edx.mobile.module.download.IDownloadManagerImpl;
 import org.edx.mobile.module.notification.DummyNotificationDelegate;
 import org.edx.mobile.module.notification.NotificationDelegate;
-import org.edx.mobile.module.notification.ParseNotificationDelegate;
 import org.edx.mobile.module.storage.IStorage;
 import org.edx.mobile.module.storage.Storage;
 import org.edx.mobile.util.BrowserUtil;
 import org.edx.mobile.util.Config;
+import org.edx.mobile.util.DateUtil;
 import org.edx.mobile.util.MediaConsentUtils;
 
 import de.greenrobot.event.EventBus;
@@ -65,17 +70,7 @@ public class EdxDefaultModule extends AbstractModule {
             bind(IApi.class).to(Api.class);
         }
 
-        if (config.isNotificationEnabled()) {
-            Config.ParseNotificationConfig parseNotificationConfig =
-                    config.getParseNotificationConfig();
-            if (parseNotificationConfig.isEnabled()) {
-                bind(NotificationDelegate.class).to(ParseNotificationDelegate.class);
-            } else {
-                bind(NotificationDelegate.class).to(DummyNotificationDelegate.class);
-            }
-        } else {
-            bind(NotificationDelegate.class).to(DummyNotificationDelegate.class);
-        }
+        bind(NotificationDelegate.class).to(DummyNotificationDelegate.class);
 
         bind(IEdxEnvironment.class).to(EdxEnvironment.class);
 
@@ -84,6 +79,14 @@ public class EdxDefaultModule extends AbstractModule {
         bind(RestAdapter.class).toProvider(RestAdapterProvider.class);
 
         bind(EventBus.class).toInstance(EventBus.getDefault());
+
+        bind(Gson.class).toInstance(new GsonBuilder()
+                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .setDateFormat(DateUtil.ISO_8601_DATE_TIME_FORMAT)
+                .registerTypeAdapter(Page.class, new JsonPageDeserializer())
+                .registerTypeAdapterFactory(new ServerJsonDateAdapterFactory())
+                .serializeNulls()
+                .create());
 
         requestStaticInjection(BrowserUtil.class, MediaConsentUtils.class,
                 DiscussionTextUtils.class);

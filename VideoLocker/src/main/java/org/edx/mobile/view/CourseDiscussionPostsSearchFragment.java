@@ -97,7 +97,11 @@ public class CourseDiscussionPostsSearchFragment extends CourseDiscussionPostsBa
 
             @Override
             protected void onException(Exception ex) {
-                super.onException(ex);
+                // Don't display any error message if we're doing a silent
+                // refresh, as that would be confusing to the user.
+                if (!callback.isRefreshingSilently()) {
+                    super.onException(ex);
+                }
                 callback.onError();
                 nextPage = 1;
             }
@@ -110,12 +114,7 @@ public class CourseDiscussionPostsSearchFragment extends CourseDiscussionPostsBa
     @Override
     public void onResume() {
         super.onResume();
-        discussionTopicsSearchView.post(new Runnable() {
-            @Override
-            public void run() {
-                discussionTopicsSearchView.clearFocus();
-            }
-        });
+        SoftKeyboardUtil.clearViewFocus(discussionTopicsSearchView);
     }
 
     @Override
