@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="@dimen/widget_margin"
+        android:paddingRight="@dimen/widget_margin">
+
+        <LinearLayout
+            android:id="@+id/panel_course_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_panel_find_courses"
+            android:descendantFocusability="blocksDescendants"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingLeft="@dimen/edx_margin"
+            android:paddingRight="@dimen/edx_margin">
+
+            <TextView
+                android:id="@+id/findcourse_tv"
+                style="@style/semibold_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/edx_margin"
+                android:layout_marginBottom="@dimen/edx_margin"
+                android:gravity="center"
+                android:text="@string/find_course_text"
+                android:textColor="@color/edx_brand_gray_base"
+                android:textSize="@dimen/edx_base" />
+
+            <Button
+                android:id="@+id/course_btn"
+                style="@style/edX.Widget.BrandPillButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/find_course_btn_text" />
+
+            <TextView
+                android:id="@+id/course_not_listed_tv"
+                style="@style/semibold_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/widget_margin"
+                android:contentDescription="@string/course_not_listed_btn"
+                android:gravity="center"
+                android:background="@drawable/selectable_rounded_box_overlay"
+                android:padding="@dimen/edx_box_radius"
+                android:text="@string/course_not_listed_text"
+                android:layout_marginBottom="@dimen/widget_margin"
+                android:textColor="@color/text_navigation"
+                android:textSize="@dimen/edx_small" />
+
+        </LinearLayout>
+    </FrameLayout>
+</layout>

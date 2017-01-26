@@ -5,7 +5,8 @@ buildscript {
         mavenCentral()  //  This is the Maven Central repo
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.1.0'
+        classpath 'com.android.tools.build:gradle:2.1.2'
+        classpath 'com.google.gms:google-services:3.0.0'
     }
 }
 
@@ -37,12 +38,21 @@ task createBuildArtifactsDirectory << { task ->
 // Copies unit test reports to the 'artifacts' directory
 task copyUnitTestBuildArtifacts << { task ->
     // copy unit test reports
-    def srcPath = "VideoLocker/build/reports"
+    def srcPath = "OpenEdXMobile/build/reports"
     task.project.exec {
         commandLine = ['cp', '-R', srcPath, 'artifacts']
     }
 }
 copyUnitTestBuildArtifacts.dependsOn createBuildArtifactsDirectory
+
+// Copies lint report to the 'artifacts' directory
+task copyLintBuildArtifacts(type: Copy) {
+    from 'OpenEdXMobile/build/outputs'
+    into 'artifacts'
+    include 'lint-results*'
+    include 'lint-results*/**'
+}
+copyLintBuildArtifacts.dependsOn createBuildArtifactsDirectory
 
 // Copies acceptance test reports to the 'artifacts' directory
 task copyAcceptanceTestBuildArtifacts << { task ->

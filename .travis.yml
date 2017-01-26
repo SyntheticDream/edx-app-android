@@ -27,32 +27,27 @@ notifications:
   email: true
 
 before_script:
+  - git fetch --tags
+  - git fetch --unshallow || true
+  - export DESCRIBE=$(git describe)
+  - export PR=https://api.github.com/repos/$TRAVIS_REPO_SLUG/pulls/$TRAVIS_PULL_REQUEST
+  - export BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then echo $TRAVIS_BRANCH; else echo `curl -s $PR | jq -r .head.ref`; fi)
+  - echo "TRAVIS_BRANCH=$TRAVIS_BRANCH, PR=$PR, BRANCH=$BRANCH, DESCRIBE=$DESCRIBE"
   - chmod +x gradlew
-  # ARM architecture is used instead of x86 (which is 10x faster) of the lack of support from CI due
-  # to complications of creating a virtual machine within a virtual machine. This may be solved
-  # eventually and would significantly speed some things up.
-  # Create the AVD for android 5.0
-  - echo no | android create avd --force --name screenshotDevice --target android-21 --abi armeabi-v7a --skin 480x854
-  - mksdcard -l e 256M mysdcard.img
-  # Set DPI for screenshot tests
-  - echo "hw.lcd.density=213" >> $HOME/.android/avd/screenshotDevice.avd/config.ini
-  # Boot up the emulator in the background
-  - emulator -avd screenshotDevice -no-audio -no-window -sdcard mysdcard.img&
+  # Begin spinning up an emulator in the background
+  - make emulator
 
 script:
-# --debug or --info info flag can be suffixed to following command for more detailed logs of tests
-# It comes in handy to see stacktraces from test failures, which otherwise aren't printed
-# P.S. --debug flag prints too many logs that are mostly not needed, which make it exceed the
-#      4mb limit enforced by travis (so use it with caution)
-  - ./gradlew testProdDebugUnitTestCoverage
-  - ./gradlew copyUnitTestBuildArtifacts
-
+  - make quality
+  - make test
+  # Check if emulator has finished booting
   - android-wait-for-emulator
   - adb shell input keyevent 82 &
-  # Run screenshot tests and compare them against screenshots in PR
-  - ./gradlew verifyMode screenshotTests -PdisablePreDex
+  - travis_wait make e2e
 
 after_script:
+  - make artifacts
+  - mv OpenEdXMobile/screenshots artifacts/
   - curl -sL https://raw.githubusercontent.com/travis-ci/artifacts/master/install | bash
   - ~/bin/artifacts upload artifacts
 
