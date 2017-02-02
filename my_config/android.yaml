@@ -1,0 +1,4 @@
+API_HOST_URL : 'https://courses.ed-era.com/api/mobile/1/?app=android'
+OAUTH_CLIENT_ID : '83043bf6240dd0cad3b7'
+ENVIRONMENT_DISPLAY_NAME : 'ed-era'
+PLATFORM_NAME : 'ed-era'
